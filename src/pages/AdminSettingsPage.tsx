@@ -47,11 +47,6 @@ export function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps) {
   const [newGroupName, setNewGroupName] = useState('');
   const [selectedRepresentative, setSelectedRepresentative] = useState('');
   
-  // Group editing
-  const [editingGroup, setEditingGroup] = useState<string | null>(null);
-  const [editGroupName, setEditGroupName] = useState('');
-  const [editGroupMembers, setEditGroupMembers] = useState<string[]>([]);
-  const [editGroupRepresentative, setEditGroupRepresentative] = useState('');
 
   useEffect(() => {
     loadData();
@@ -201,61 +196,6 @@ export function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps) {
     }
   };
 
-  const handleEditGroup = (groupId: string) => {
-    const group = groups.find(g => g.id === groupId);
-    if (!group) return;
-    
-    setEditingGroup(groupId);
-    setEditGroupName(group.name || '');
-    setEditGroupRepresentative(group.representative);
-    setEditGroupMembers([...group.members]);
-  };
-
-  const handleCancelEditGroup = () => {
-    setEditingGroup(null);
-    setEditGroupName('');
-    setEditGroupRepresentative('');
-    setEditGroupMembers([]);
-  };
-
-  const handleSaveGroupEdit = async () => {
-    if (!editingGroup) return;
-    
-    clearMessages();
-    setLoading(true);
-    
-    try {
-      // Validate group
-      if (editGroupMembers.length + 1 < 1 || editGroupMembers.length + 1 > 3) {
-        throw new Error('Groups must have 1-3 total members (including representative)');
-      }
-      
-      if (!editGroupRepresentative) {
-        throw new Error('Please select a representative');
-      }
-      
-      // Check if representative has the right role
-      const repParticipant = participants.find(p => p.email === editGroupRepresentative);
-      if (!repParticipant) {
-        throw new Error('Selected representative not found');
-      }
-      
-      if (repParticipant.role !== 'representative') {
-        await designateRepresentative(editGroupRepresentative);
-      }
-      
-      // Remove old group and create new one
-      await removeGroup(editingGroup);
-      await createGroup(editGroupRepresentative, editGroupMembers, editGroupName.trim() || undefined);
-      
-      setSuccess('Group updated successfully');
-      handleCancelEditGroup();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update group');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleRemoveFromGroup = async (email: string) => {
     if (!confirm(`Remove ${email} from their group? They will become ungrouped.`)) return;

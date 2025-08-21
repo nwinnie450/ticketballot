@@ -13,7 +13,6 @@ export function StatusPage({ onNavigate }: StatusPageProps) {
     ballotResults, 
     setCurrentUser,
     drawForGroup,
-    canRepresentativeDraw,
     getBallotStatus,
     loading,
     error,
