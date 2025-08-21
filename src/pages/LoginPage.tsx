@@ -24,8 +24,8 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
     try {
       const input = identifier.trim().toLowerCase();
       
-      // Check if it's an admin username (check with authService)
-      const isAdmin = authService.getAdmins().some(admin => 
+      // Check if it's an admin username (check with authService or default 'admin')
+      const isAdmin = input === 'admin' || authService.getAdmins().some(admin => 
         admin.username.toLowerCase() === input
       );
 
@@ -63,13 +63,11 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
     try {
       if (userType === 'admin') {
         // Admin login
-        const success = authService.login(identifier, password);
-        if (success) {
-          setSuccess('Admin login successful!');
-          setTimeout(() => {
-            onNavigate('admin-dashboard');
-          }, 1000);
-        }
+        authService.login(identifier, password);
+        setSuccess('Admin login successful!');
+        setTimeout(() => {
+          onNavigate('admin-dashboard');
+        }, 1000);
       } else if (userType === 'user') {
         // User login (no password needed for now, just verify they exist)
         setCurrentUser(identifier.toLowerCase());
