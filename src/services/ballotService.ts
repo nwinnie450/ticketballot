@@ -159,7 +159,7 @@ class BallotService {
   }
 
   // Group management
-  createGroup(representative: string, members: string[]): string {
+  createGroup(representative: string, members: string[], name?: string): string {
     if (!this.isParticipantRegistered(representative)) {
       throw new Error('Representative must be registered');
     }
@@ -212,6 +212,7 @@ class BallotService {
     const group: Group = {
       id: groupId,
       sessionId: currentSessionId,
+      name: name || this.generateGroupName(),
       representative: representative.toLowerCase(),
       members: members.map(email => email.toLowerCase()),
       status: 'pending',
@@ -356,6 +357,29 @@ class BallotService {
 
   private generateId(): string {
     return Math.random().toString(36).substr(2, 9);
+  }
+
+  private generateGroupName(): string {
+    const adjectives = [
+      'Swift', 'Bright', 'Bold', 'Lucky', 'Golden', 'Silver', 'Royal', 'Elite',
+      'Prime', 'Star', 'Diamond', 'Crystal', 'Thunder', 'Lightning', 'Phoenix',
+      'Dragon', 'Eagle', 'Tiger', 'Lion', 'Wolf', 'Falcon', 'Hawk', 'Arrow',
+      'Rocket', 'Comet', 'Meteor', 'Galaxy', 'Nova', 'Stellar', 'Cosmic',
+      'Alpha', 'Beta', 'Gamma', 'Delta', 'Omega', 'Apex', 'Zenith', 'Summit'
+    ];
+    
+    const nouns = [
+      'Squad', 'Team', 'Crew', 'Alliance', 'Force', 'Legion', 'Guild', 'Circle',
+      'Order', 'Society', 'Union', 'Coalition', 'Band', 'Troop', 'Company',
+      'Division', 'Group', 'Unit', 'Wing', 'Core', 'Elite', 'Guard', 'Rangers',
+      'Knights', 'Warriors', 'Champions', 'Masters', 'Legends', 'Heroes',
+      'Titans', 'Guardians', 'Sentinels', 'Defenders', 'Crusaders', 'Pioneers'
+    ];
+    
+    const randomAdjective = adjectives[Math.floor(Math.random() * adjectives.length)];
+    const randomNoun = nouns[Math.floor(Math.random() * nouns.length)];
+    
+    return `${randomAdjective} ${randomNoun}`;
   }
 
   private shuffleArray<T>(array: T[]): T[] {

@@ -40,9 +40,13 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
         );
 
         if (isUser) {
-          setUserType('user');
-          setStep('authenticate');
-          setSuccess('User account detected. Click continue to login.');
+          // For users, login immediately without password
+          setCurrentUser(input);
+          setSuccess('User login successful! Redirecting...');
+          setTimeout(() => {
+            onNavigate('status');
+          }, 1000);
+          return; // Exit early, skip authentication step
         } else {
           throw new Error('Username/email not found. Please check your input or register first.');
         }
@@ -150,7 +154,7 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
                 autoFocus
               />
               <p className="text-xs text-gray-500 mt-1">
-                Enter 'admin' for admin access or your registered email for user access
+                Enter 'admin' for admin access or your registered email for instant user access
               </p>
             </div>
 
@@ -183,7 +187,7 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
             </div>
 
             <form onSubmit={handleAuthenticate} className="space-y-4">
-              {userType === 'admin' ? (
+              {userType === 'admin' && (
                 <div>
                   <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
                     Password
@@ -200,12 +204,6 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
                     autoComplete="current-password"
                     autoFocus
                   />
-                </div>
-              ) : (
-                <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-                  <p className="text-sm text-green-800">
-                    ✅ User account verified. Click continue to proceed.
-                  </p>
                 </div>
               )}
 

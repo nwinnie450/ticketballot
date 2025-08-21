@@ -15,6 +15,7 @@ export function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps) {
     removeParticipant,
     designateRepresentative,
     removeRepresentativeRole,
+    createGroup,
     updateGroupStatus,
     removeGroup,
     loading: ballotLoading,
@@ -39,6 +40,15 @@ export function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps) {
 
   // User management form
   const [newUserEmail, setNewUserEmail] = useState('');
+  const [assignToGroup, setAssignToGroup] = useState(false);
+  const [selectedGroupMembers, setSelectedGroupMembers] = useState<string[]>([]);
+  const [makeRepresentative, setMakeRepresentative] = useState(false);
+  const [groupName, setGroupName] = useState('');
+  
+  // Group creation form (separate from adding users)
+  const [selectedUsersForGroup, setSelectedUsersForGroup] = useState<string[]>([]);
+  const [newGroupName, setNewGroupName] = useState('');
+  const [selectedRepresentative, setSelectedRepresentative] = useState('');
 
   useEffect(() => {
     loadData();
@@ -147,9 +157,42 @@ export function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps) {
     setLoading(true);
 
     try {
+      // First register the participant
       await registerParticipant(newUserEmail, 'admin');
-      setSuccess(`User '${newUserEmail}' added successfully`);
+      
+      // If they should be a representative, designate them
+      if (makeRepresentative) {
+        await designateRepresentative(newUserEmail);
+      }
+      
+      // If assigning to group, create the group
+      if (assignToGroup && selectedGroupMembers.length > 0) {
+        // The new user becomes the representative if makeRepresentative is true
+        // Otherwise, find a representative from selected members
+        const representative = makeRepresentative ? newUserEmail : selectedGroupMembers[0];
+        
+        // If the representative is not the new user, they must already be a representative
+        if (representative !== newUserEmail) {
+          const repParticipant = participants.find(p => p.email === representative);
+          if (!repParticipant || repParticipant.role !== 'representative') {
+            throw new Error(`${representative} must be a representative to create groups`);
+          }
+        }
+        
+        // Create group with selected members (excluding the representative)
+        const groupMembers = selectedGroupMembers.filter(email => email !== representative);
+        await createGroup(representative, groupMembers, groupName || undefined);
+        setSuccess(`User '${newUserEmail}' added and assigned to group successfully`);
+      } else {
+        setSuccess(`User '${newUserEmail}' added successfully`);
+      }
+      
+      // Reset form
       setNewUserEmail('');
+      setAssignToGroup(false);
+      setSelectedGroupMembers([]);
+      setMakeRepresentative(false);
+      setGroupName('');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to add user');
     } finally {
@@ -183,6 +226,47 @@ export function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps) {
       setSuccess(`User ${email} removed successfully`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to remove user');
+    }
+  };
+
+  const handleCreateGroupFromUsers = async (e: React.FormEvent) => {
+    e.preventDefault();
+    clearMessages();
+    setLoading(true);
+
+    try {
+      if (selectedUsersForGroup.length < 1 || selectedUsersForGroup.length > 3) {
+        throw new Error('Groups must have 1-3 members');
+      }
+
+      if (!selectedRepresentative) {
+        throw new Error('Please select a representative for the group');
+      }
+
+      if (!selectedUsersForGroup.includes(selectedRepresentative)) {
+        throw new Error('Representative must be a member of the group');
+      }
+
+      // Ensure the representative has the right role
+      const repParticipant = participants.find(p => p.email === selectedRepresentative);
+      if (!repParticipant || repParticipant.role !== 'representative') {
+        throw new Error('Selected representative must have representative role');
+      }
+
+      // Create group with other members (excluding the representative)
+      const groupMembers = selectedUsersForGroup.filter(email => email !== selectedRepresentative);
+      await createGroup(selectedRepresentative, groupMembers, newGroupName || undefined);
+      
+      setSuccess(`Group "${newGroupName || 'Auto-generated'}" created successfully with ${selectedUsersForGroup.length} members`);
+      
+      // Reset form
+      setSelectedUsersForGroup([]);
+      setNewGroupName('');
+      setSelectedRepresentative('');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create group');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -492,27 +576,283 @@ export function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps) {
                     <label htmlFor="newUserEmail" className="block text-sm font-medium text-gray-700 mb-1">
                       Email Address
                     </label>
-                    <div className="flex gap-2">
+                    <input
+                      type="email"
+                      id="newUserEmail"
+                      value={newUserEmail}
+                      onChange={(e) => setNewUserEmail(e.target.value)}
+                      className="input-field"
+                      placeholder="user@example.com"
+                      required
+                      disabled={loading || ballotLoading}
+                      autoComplete="off"
+                    />
+                  </div>
+
+                  {/* Role Assignment */}
+                  <div>
+                    <label className="flex items-center space-x-2">
                       <input
-                        type="email"
-                        id="newUserEmail"
-                        value={newUserEmail}
-                        onChange={(e) => setNewUserEmail(e.target.value)}
-                        className="flex-1 input-field"
-                        placeholder="user@example.com"
+                        type="checkbox"
+                        checked={makeRepresentative}
+                        onChange={(e) => setMakeRepresentative(e.target.checked)}
+                        disabled={loading || ballotLoading}
+                        className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                      />
+                      <span className="text-sm font-medium text-gray-700">Make Representative</span>
+                    </label>
+                    <p className="text-xs text-gray-500 mt-1">Representatives can create and manage groups</p>
+                  </div>
+
+                  {/* Group Assignment */}
+                  <div>
+                    <label className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        checked={assignToGroup}
+                        onChange={(e) => setAssignToGroup(e.target.checked)}
+                        disabled={loading || ballotLoading}
+                        className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                      />
+                      <span className="text-sm font-medium text-gray-700">Assign to Group</span>
+                    </label>
+                    <p className="text-xs text-gray-500 mt-1">Create a group with this user and up to 2 other members</p>
+                  </div>
+
+                  {/* Group Configuration */}
+                  {assignToGroup && (
+                    <div className="bg-gray-50 p-4 rounded-lg space-y-4">
+                      <div>
+                        <label htmlFor="groupName" className="block text-sm font-medium text-gray-700 mb-1">
+                          Group Name (Optional)
+                        </label>
+                        <input
+                          type="text"
+                          id="groupName"
+                          value={groupName}
+                          onChange={(e) => setGroupName(e.target.value)}
+                          className="input-field"
+                          placeholder="e.g., Alpha Squad (leave blank for auto-generated name)"
+                          disabled={loading || ballotLoading}
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Select Group Members (Max 3 total including new user)
+                        </label>
+                        
+                        {/* Available participants for selection */}
+                        <div className="max-h-40 overflow-y-auto border border-gray-200 rounded-md">
+                          {participants
+                            .filter(p => !groups.some(g => 
+                              g.representative === p.email || g.members.includes(p.email)
+                            ))
+                            .map(participant => (
+                            <label key={participant.email} className="flex items-center p-2 hover:bg-gray-50">
+                              <input
+                                type="checkbox"
+                                checked={selectedGroupMembers.includes(participant.email)}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    if (selectedGroupMembers.length < 2) { // Max 3 total including new user
+                                      setSelectedGroupMembers([...selectedGroupMembers, participant.email]);
+                                    }
+                                  } else {
+                                    setSelectedGroupMembers(selectedGroupMembers.filter(email => email !== participant.email));
+                                  }
+                                }}
+                                disabled={
+                                  loading || ballotLoading || 
+                                  (!selectedGroupMembers.includes(participant.email) && selectedGroupMembers.length >= 2)
+                                }
+                                className="mr-2 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                              />
+                              <div className="flex-1">
+                                <span className="text-sm text-gray-900">{participant.email}</span>
+                                <span className={`ml-2 px-2 py-0.5 text-xs rounded-full ${
+                                  participant.role === 'representative' 
+                                    ? 'bg-purple-100 text-purple-700' 
+                                    : 'bg-gray-100 text-gray-600'
+                                }`}>
+                                  {participant.role}
+                                </span>
+                              </div>
+                            </label>
+                          ))}
+                        </div>
+                        
+                        {participants.filter(p => !groups.some(g => 
+                          g.representative === p.email || g.members.includes(p.email)
+                        )).length === 0 && (
+                          <p className="text-sm text-gray-500 py-2">No available participants to add to group</p>
+                        )}
+                        
+                        <p className="text-xs text-gray-500 mt-2">
+                          Selected: {selectedGroupMembers.length + 1}/3 members (including new user)
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={
+                      loading || ballotLoading || !newUserEmail.trim() ||
+                      (assignToGroup && !makeRepresentative && selectedGroupMembers.length === 0)
+                    }
+                    className="btn-primary w-full"
+                  >
+                    {loading || ballotLoading ? 'Adding...' : 'Add User'}
+                  </button>
+                </form>
+              </div>
+
+              {/* Create Groups from Existing Users */}
+              <div className="card">
+                <h3 className="text-lg font-semibold text-gray-900 mb-6">Create Group from Existing Users</h3>
+                
+                <form onSubmit={handleCreateGroupFromUsers} className="space-y-4">
+                  <div>
+                    <label htmlFor="newGroupName" className="block text-sm font-medium text-gray-700 mb-1">
+                      Group Name (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      id="newGroupName"
+                      value={newGroupName}
+                      onChange={(e) => setNewGroupName(e.target.value)}
+                      className="input-field"
+                      placeholder="e.g., Alpha Squad (leave blank for auto-generated name)"
+                      disabled={loading || ballotLoading}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Select Users for Group (Max 3)
+                    </label>
+                    
+                    {/* Available participants for group selection */}
+                    <div className="max-h-48 overflow-y-auto border border-gray-200 rounded-md">
+                      {participants
+                        .filter(p => !groups.some(g => 
+                          g.representative === p.email || g.members.includes(p.email)
+                        ))
+                        .map(participant => (
+                        <label key={participant.email} className="flex items-center p-3 hover:bg-gray-50">
+                          <input
+                            type="checkbox"
+                            checked={selectedUsersForGroup.includes(participant.email)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                if (selectedUsersForGroup.length < 3) {
+                                  setSelectedUsersForGroup([...selectedUsersForGroup, participant.email]);
+                                  // Auto-select first representative if none selected
+                                  if (!selectedRepresentative && participant.role === 'representative') {
+                                    setSelectedRepresentative(participant.email);
+                                  }
+                                }
+                              } else {
+                                setSelectedUsersForGroup(selectedUsersForGroup.filter(email => email !== participant.email));
+                                // Clear representative if they were deselected
+                                if (selectedRepresentative === participant.email) {
+                                  setSelectedRepresentative('');
+                                }
+                              }
+                            }}
+                            disabled={
+                              loading || ballotLoading || 
+                              (!selectedUsersForGroup.includes(participant.email) && selectedUsersForGroup.length >= 3)
+                            }
+                            className="mr-3 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                          />
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm text-gray-900 font-medium">{participant.email}</span>
+                              <div className="flex items-center space-x-2">
+                                <span className={`px-2 py-0.5 text-xs rounded-full ${
+                                  participant.role === 'representative' 
+                                    ? 'bg-purple-100 text-purple-700' 
+                                    : 'bg-gray-100 text-gray-600'
+                                }`}>
+                                  {participant.role}
+                                </span>
+                                {participant.role === 'representative' && selectedUsersForGroup.includes(participant.email) && (
+                                  <span className="text-xs text-purple-600">✓ Can lead group</span>
+                                )}
+                              </div>
+                            </div>
+                            {participant.role === 'representative' && participant.designatedBy && (
+                              <div className="text-xs text-gray-500 mt-1">
+                                Representative designated by {participant.designatedBy}
+                              </div>
+                            )}
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+                    
+                    {participants.filter(p => !groups.some(g => 
+                      g.representative === p.email || g.members.includes(p.email)
+                    )).length === 0 && (
+                      <p className="text-sm text-gray-500 py-4 text-center">No available users to form groups</p>
+                    )}
+                    
+                    <p className="text-xs text-gray-500 mt-2">
+                      Selected: {selectedUsersForGroup.length}/3 users
+                    </p>
+                  </div>
+
+                  {/* Representative Selection */}
+                  {selectedUsersForGroup.length > 0 && (
+                    <div>
+                      <label htmlFor="selectedRepresentative" className="block text-sm font-medium text-gray-700 mb-1">
+                        Group Representative *
+                      </label>
+                      <select
+                        id="selectedRepresentative"
+                        value={selectedRepresentative}
+                        onChange={(e) => setSelectedRepresentative(e.target.value)}
+                        className="input-field"
                         required
                         disabled={loading || ballotLoading}
-                        autoComplete="off"
-                      />
-                      <button
-                        type="submit"
-                        disabled={loading || ballotLoading || !newUserEmail.trim()}
-                        className="btn-primary"
                       >
-                        {loading || ballotLoading ? 'Adding...' : 'Add User'}
-                      </button>
+                        <option value="">Select representative...</option>
+                        {selectedUsersForGroup
+                          .filter(email => {
+                            const participant = participants.find(p => p.email === email);
+                            return participant?.role === 'representative';
+                          })
+                          .map(email => (
+                            <option key={email} value={email}>
+                              {email}
+                            </option>
+                          ))}
+                      </select>
+                      {selectedUsersForGroup.filter(email => {
+                        const participant = participants.find(p => p.email === email);
+                        return participant?.role === 'representative';
+                      }).length === 0 && (
+                        <p className="text-xs text-warning-600 mt-1">
+                          ⚠️ No representatives selected. You need at least one representative to lead the group.
+                        </p>
+                      )}
                     </div>
-                  </div>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={
+                      loading || ballotLoading || 
+                      selectedUsersForGroup.length === 0 || 
+                      selectedUsersForGroup.length > 3 ||
+                      !selectedRepresentative
+                    }
+                    className="btn-primary w-full"
+                  >
+                    {loading || ballotLoading ? 'Creating Group...' : `Create Group (${selectedUsersForGroup.length} members)`}
+                  </button>
                 </form>
               </div>
 
@@ -632,7 +972,7 @@ export function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps) {
                         <div className="flex-1">
                           <div className="flex items-center space-x-3">
                             <h4 className="font-medium text-gray-900">
-                              Group ({group.members.length} members)
+                              {group.name || 'Unnamed Group'} ({group.members.length} members)
                             </h4>
                             <span className={`px-2 py-1 text-xs font-medium rounded-full ${
                               group.status === 'approved' 

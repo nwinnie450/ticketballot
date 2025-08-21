@@ -11,6 +11,7 @@ export interface Participant {
 export interface Group {
   id: string;
   sessionId: string; // Which session this group belongs to
+  name?: string; // Optional group name
   representative: string;
   members: string[];
   status: 'pending' | 'approved' | 'locked';

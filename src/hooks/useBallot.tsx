@@ -89,9 +89,9 @@ export function BallotProvider({ children }: { children: ReactNode }) {
     });
   };
 
-  const createGroup = async (representative: string, members: string[]) => {
+  const createGroup = async (representative: string, members: string[], name?: string) => {
     await handleAsync(() => {
-      ballotService.createGroup(representative, members);
+      ballotService.createGroup(representative, members, name);
     });
   };
 
