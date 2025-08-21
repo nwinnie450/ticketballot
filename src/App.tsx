@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { BallotProvider } from './hooks/useBallot';
 import { Header } from './components/layout/Header';
 import { LandingPage } from './pages/LandingPage';

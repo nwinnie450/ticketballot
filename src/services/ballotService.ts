@@ -1,4 +1,4 @@
-import { AppState, Participant, Group, BallotResult, BallotEntry } from '../types';
+import type { AppState, Participant, Group, BallotResult, BallotEntry } from '../types';
 
 const STORAGE_KEY = 'ticket-ballot-data';
 

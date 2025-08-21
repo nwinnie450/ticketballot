@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useBallot } from '../hooks/useBallot';
 
 interface ResultsPageProps {
@@ -6,7 +6,7 @@ interface ResultsPageProps {
 }
 
 export function ResultsPage({ onNavigate }: ResultsPageProps) {
-  const { ballotResults, groups, participants } = useBallot();
+  const { ballotResults, groups } = useBallot();
   const [searchEmail, setSearchEmail] = useState('');
   const [searchResult, setSearchResult] = useState<{
     found: boolean;

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useBallot } from '../../hooks/useBallot';
 
 interface HeaderProps {
@@ -7,7 +7,7 @@ interface HeaderProps {
 }
 
 export function Header({ onNavigate, currentPage }: HeaderProps) {
-  const { userRole, currentUser, setCurrentUser, setAdmin } = useBallot();
+  const { userRole, currentUser, setAdmin } = useBallot();
   const [showMobileMenu, setShowMobileMenu] = useState(false);
 
   const handleRoleSwitch = () => {

@@ -1,4 +1,3 @@
-import React from 'react';
 import { ballotService } from '../../services/ballotService';
 import { useBallot } from '../../hooks/useBallot';
 

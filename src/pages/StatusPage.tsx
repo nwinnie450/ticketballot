@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useBallot } from '../hooks/useBallot';
 
 interface StatusPageProps {
@@ -11,7 +11,6 @@ export function StatusPage({ onNavigate }: StatusPageProps) {
     groups, 
     participants, 
     ballotResults, 
-    userRole,
     setCurrentUser 
   } = useBallot();
   

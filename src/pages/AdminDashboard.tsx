@@ -145,7 +145,7 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
               <div className="card">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h3>
                 <div className="space-y-3">
-                  {groups.slice(-5).reverse().map((group, index) => (
+                  {groups.slice(-5).reverse().map((group) => (
                     <div key={group.id} className="flex items-center justify-between py-2">
                       <div>
                         <p className="text-sm font-medium text-gray-900">
