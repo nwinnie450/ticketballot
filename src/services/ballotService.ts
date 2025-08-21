@@ -454,6 +454,24 @@ class BallotService {
     };
     this.saveData();
   }
+
+  // Clear ballot data only (keep admin authentication)
+  clearBallotData(): void {
+    this.data = {
+      participants: [],
+      groups: [],
+      ballotResults: null,
+      ballotSessions: [],
+      currentSessionId: null,
+      currentUser: null,
+      admins: this.data.admins, // Keep existing admins
+      auth: {
+        isAuthenticated: false, // Clear current session but keep admin accounts
+        currentAdmin: null,
+      },
+    };
+    this.saveData();
+  }
 }
 
 export const ballotService = new BallotService();

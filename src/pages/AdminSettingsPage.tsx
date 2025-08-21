@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useBallot } from '../hooks/useBallot';
 import { authService } from '../services/authService';
 
 interface AdminSettingsPageProps {
@@ -6,6 +7,7 @@ interface AdminSettingsPageProps {
 }
 
 export function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps) {
+  const { clearBallotData } = useBallot();
   const [activeTab, setActiveTab] = useState<'password' | 'admins' | 'system'>('password');
   const [admins, setAdmins] = useState<any[]>([]);
   const [adminStats, setAdminStats] = useState<any>(null);
@@ -106,6 +108,19 @@ export function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps) {
       loadData();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to clear data');
+    }
+  };
+
+  const handleClearBallotData = async () => {
+    if (!confirm('⚠️ This will delete ALL ballot data (participants, groups, results) but keep admin accounts. Continue?')) return;
+    if (!confirm('This includes all participants, groups, ballot results, and sessions. Admin accounts will be preserved. Are you sure?')) return;
+
+    try {
+      await clearBallotData();
+      setSuccess('Ballot data cleared successfully. Admin accounts preserved.');
+      loadData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to clear ballot data');
     }
   };
 
@@ -411,15 +426,25 @@ export function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps) {
                     These actions cannot be undone. Please use with caution.
                   </p>
                   
-                  <button
-                    onClick={handleClearAllData}
-                    className="bg-error-600 text-white px-4 py-2 rounded-md font-medium hover:bg-error-700 focus:outline-none focus:ring-2 focus:ring-error-500 focus:ring-offset-2"
-                  >
-                    🗑️ Clear All Data
-                  </button>
-                  <p className="text-xs text-yellow-600 mt-2">
-                    This will delete all participants, groups, ballot results, and admin accounts (except default admin)
-                  </p>
+                  <div className="space-y-3">
+                    <button
+                      onClick={handleClearBallotData}
+                      className="bg-warning-600 text-white px-4 py-2 rounded-md font-medium hover:bg-warning-700 focus:outline-none focus:ring-2 focus:ring-warning-500 focus:ring-offset-2 mr-3"
+                    >
+                      🧹 Clear Ballot Data Only
+                    </button>
+                    <button
+                      onClick={handleClearAllData}
+                      className="bg-error-600 text-white px-4 py-2 rounded-md font-medium hover:bg-error-700 focus:outline-none focus:ring-2 focus:ring-error-500 focus:ring-offset-2"
+                    >
+                      🗑️ Clear All Data
+                    </button>
+                  </div>
+                  
+                  <div className="text-xs text-yellow-600 mt-3 space-y-1">
+                    <div><strong>Clear Ballot Data Only:</strong> Removes all participants, groups, ballot results, and sessions. Keeps admin accounts.</div>
+                    <div><strong>Clear All Data:</strong> Removes everything including admin accounts (except default admin).</div>
+                  </div>
                 </div>
 
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">

@@ -28,6 +28,9 @@ interface BallotContextType {
   designateRepresentative: (email: string) => Promise<void>;
   removeRepresentativeRole: (email: string) => Promise<void>;
   
+  // Data management
+  clearBallotData: () => Promise<void>;
+  
   refresh: () => void;
   clearError: () => void;
 }
@@ -149,6 +152,12 @@ export function BallotProvider({ children }: { children: ReactNode }) {
     });
   };
 
+  const clearBallotData = async () => {
+    await handleAsync(() => {
+      ballotService.clearBallotData();
+    });
+  };
+
   const clearError = () => setError(null);
 
   const value: BallotContextType = {
@@ -170,6 +179,7 @@ export function BallotProvider({ children }: { children: ReactNode }) {
     setAdmin,
     designateRepresentative,
     removeRepresentativeRole,
+    clearBallotData,
     refresh,
     clearError,
   };

@@ -31,6 +31,7 @@ export function Header({ onNavigate, currentPage }: HeaderProps) {
 
   const navItems = [
     { id: 'landing', label: 'Home', roles: ['guest', 'user', 'representative', 'admin'] },
+    // Only show Register for guests (not logged in users)
     { id: 'registration', label: 'Register', roles: ['guest'] },
     { id: 'group-formation', label: 'Create Group', roles: ['representative'] },
     { id: 'status', label: 'My Status', roles: ['user', 'representative'] },
@@ -45,7 +46,7 @@ export function Header({ onNavigate, currentPage }: HeaderProps) {
   // Add admin navigation items if authenticated
   const adminNavItems = isAdminAuthenticated ? [
     { id: 'admin-dashboard', label: 'Dashboard', roles: ['admin'] },
-    { id: 'admin-settings', label: 'Settings', roles: ['admin'] },
+    { id: 'admin-settings', label: 'Admin Settings', roles: ['admin'] },
   ] : [];
 
   const allNavItems = [...navItems, ...loginItems, ...adminNavItems];
