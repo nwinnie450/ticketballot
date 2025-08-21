@@ -75,6 +75,7 @@ export type PageType =
   | 'group-formation' 
   | 'status' 
   | 'results' 
+  | 'login'
   | 'admin-login'
   | 'admin-dashboard'
   | 'admin-participants'

@@ -8,7 +8,7 @@ interface HeaderProps {
 }
 
 export function Header({ onNavigate, currentPage }: HeaderProps) {
-  const { userRole, currentUser } = useBallot();
+  const { userRole, currentUser, setCurrentUser } = useBallot();
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   
   const isAdminAuthenticated = authService.isAuthenticated();
@@ -37,13 +37,18 @@ export function Header({ onNavigate, currentPage }: HeaderProps) {
     { id: 'results', label: 'Results', roles: ['guest', 'user', 'representative', 'admin'] },
   ];
 
+  // Add login option for guests
+  const loginItems = !currentUser && !isAdminAuthenticated ? [
+    { id: 'login', label: '🔐 Login', roles: ['guest'] },
+  ] : [];
+
   // Add admin navigation items if authenticated
   const adminNavItems = isAdminAuthenticated ? [
     { id: 'admin-dashboard', label: 'Dashboard', roles: ['admin'] },
     { id: 'admin-settings', label: 'Settings', roles: ['admin'] },
   ] : [];
 
-  const allNavItems = [...navItems, ...adminNavItems];
+  const allNavItems = [...navItems, ...loginItems, ...adminNavItems];
   const visibleItems = allNavItems.filter(item => 
     item.roles.includes(userRole) || (isAdminAuthenticated && item.roles.includes('admin'))
   );
@@ -83,25 +88,49 @@ export function Header({ onNavigate, currentPage }: HeaderProps) {
           {/* User Info & Actions */}
           <div className="flex items-center space-x-4">
             {currentUser && (
-              <div className="hidden sm:block text-sm text-gray-600">
-                {currentUser}
+              <div className="hidden sm:flex items-center space-x-2 text-sm text-gray-600">
+                <span>{currentUser}</span>
+                <button
+                  onClick={() => {
+                    if (confirm('Logout from current user session?')) {
+                      setCurrentUser(null);
+                      onNavigate('landing');
+                    }
+                  }}
+                  className="text-xs text-gray-500 hover:text-gray-700 underline"
+                  title="Logout User"
+                >
+                  logout
+                </button>
               </div>
             )}
             
-            {/* Admin Button */}
-            <button
-              onClick={handleAdminAction}
-              className="text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 rounded-full transition-colors"
-              title={isAdminAuthenticated ? 
-                (currentPage.startsWith('admin-') ? 'Logout' : 'Admin Dashboard') : 
-                'Admin Login'
-              }
-            >
-              {isAdminAuthenticated ? 
-                (currentPage.startsWith('admin-') ? '🚪 Logout' : '⚙️ Admin') : 
-                '🔐 Admin'
-              }
-            </button>
+            {/* Login/Admin Button */}
+            {!currentUser && !isAdminAuthenticated ? (
+              <button
+                onClick={() => onNavigate('login')}
+                className="text-sm bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg transition-colors"
+                title="Login"
+              >
+                🔐 Login
+              </button>
+            ) : isAdminAuthenticated ? (
+              <button
+                onClick={handleAdminAction}
+                className="text-sm bg-primary-100 hover:bg-primary-200 text-primary-700 px-3 py-1 rounded-full transition-colors"
+                title={currentPage.startsWith('admin-') ? 'Logout' : 'Admin Dashboard'}
+              >
+                {currentPage.startsWith('admin-') ? '🚪 Logout' : '⚙️ Dashboard'}
+              </button>
+            ) : (
+              <button
+                onClick={() => onNavigate('login')}
+                className="text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 rounded-full transition-colors"
+                title="Switch User / Admin Login"
+              >
+                🔄 Switch
+              </button>
+            )}
             
             {/* Show current admin name if logged in */}
             {isAdminAuthenticated && currentAdmin && (
@@ -151,8 +180,21 @@ export function Header({ onNavigate, currentPage }: HeaderProps) {
               ))}
               
               {currentUser && (
-                <div className="px-3 py-2 text-sm text-gray-500 border-t border-gray-200 mt-2">
-                  Logged in as: {currentUser}
+                <div className="px-3 py-2 text-sm text-gray-500 border-t border-gray-200 mt-2 flex items-center justify-between">
+                  <span>Logged in as: {currentUser}</span>
+                  <button
+                    onClick={() => {
+                      if (confirm('Logout from current user session?')) {
+                        setCurrentUser(null);
+                        onNavigate('landing');
+                        setShowMobileMenu(false);
+                      }
+                    }}
+                    className="text-xs text-gray-500 hover:text-gray-700 underline"
+                    title="Logout User"
+                  >
+                    logout
+                  </button>
                 </div>
               )}
             </div>

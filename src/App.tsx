@@ -8,6 +8,7 @@ import { ResultsPage } from './pages/ResultsPage';
 import { AdminDashboard } from './pages/AdminDashboard';
 import { AdminLoginPage } from './pages/AdminLoginPage';
 import { AdminSettingsPage } from './pages/AdminSettingsPage';
+import { LoginPage } from './pages/LoginPage';
 import { DemoButton } from './components/ui/DemoButton';
 import { authService } from './services/authService';
 import type { PageType } from './types';
@@ -34,6 +35,8 @@ function AppContent() {
         return <StatusPage onNavigate={handleNavigate} />;
       case 'results':
         return <ResultsPage onNavigate={handleNavigate} />;
+      case 'login':
+        return <LoginPage onNavigate={handleNavigate} />;
       case 'admin-login':
         return <AdminLoginPage onNavigate={handleNavigate} onLoginSuccess={handleAuthChange} />;
       case 'admin-dashboard':
