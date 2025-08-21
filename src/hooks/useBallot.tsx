@@ -16,7 +16,7 @@ interface BallotContextType {
 
   // Actions
   registerParticipant: (email: string, addedBy?: 'self' | 'admin') => Promise<void>;
-  createGroup: (representative: string, members: string[]) => Promise<void>;
+  createGroup: (representative: string, members: string[], name?: string) => Promise<void>;
   updateGroupStatus: (groupId: string, status: Group['status']) => Promise<void>;
   removeGroup: (groupId: string) => Promise<void>;
   removeParticipant: (email: string) => Promise<void>;
