@@ -1,4 +1,4 @@
-import type { AppState, Participant, Group, BallotResult, BallotEntry, BallotSession } from '../types';
+import type { AppState, Participant, Group, BallotResult, BallotSession } from '../types';
 
 const STORAGE_KEY = 'ticket-ballot-data';
 
@@ -123,6 +123,29 @@ class BallotService {
       throw new Error('Participant not found');
     }
 
+    // Check if this person is in a group that already has a representative
+    const currentSessionId = this.data.currentSessionId;
+    if (currentSessionId) {
+      const userGroup = this.data.groups.find(g => 
+        g.sessionId === currentSessionId && (
+          g.representative.toLowerCase() === email.toLowerCase() ||
+          g.members.some(m => m.toLowerCase() === email.toLowerCase())
+        )
+      );
+
+      if (userGroup) {
+        // If they're already the representative, no need to change
+        if (userGroup.representative.toLowerCase() === email.toLowerCase()) {
+          return true; // Already representative, no action needed
+        }
+        
+        // If they're a member but group already has a different representative, prevent it
+        if (userGroup.representative.toLowerCase() !== email.toLowerCase()) {
+          throw new Error(`Cannot make ${email} representative. Group "${userGroup.name || 'Unnamed Group'}" already has representative: ${userGroup.representative}`);
+        }
+      }
+    }
+
     participant.role = 'representative';
     participant.designatedBy = designatedBy;
     participant.designatedAt = new Date();
@@ -176,8 +199,10 @@ class BallotService {
       throw new Error(`These members are not registered: ${invalidMembers.join(', ')}`);
     }
 
-    if (members.length < 1 || members.length > 3) {
-      throw new Error('Groups must have 1-3 members');
+    // Total group size = representative + members (members can be 0 for 1-person groups)
+    const totalGroupSize = members.length + 1;
+    if (totalGroupSize < 1 || totalGroupSize > 3) {
+      throw new Error(`Groups must have 1-3 total members. You have ${totalGroupSize} (1 rep + ${members.length} members)`);
     }
 
     const currentSessionId = this.data.currentSessionId || this.createDefaultSession();
@@ -209,10 +234,30 @@ class BallotService {
     }
 
     const groupId = this.generateId();
+    
+    // Auto-assign name if not provided, otherwise validate custom name
+    let finalGroupName: string;
+    if (!name || !name.trim()) {
+      finalGroupName = this.generateGroupName();
+    } else {
+      const trimmedName = name.trim();
+      // Check for duplicate group names in current session
+      const duplicateNameGroup = this.data.groups.find(g => 
+        g.sessionId === currentSessionId && 
+        g.name && 
+        g.name.toLowerCase() === trimmedName.toLowerCase()
+      );
+      
+      if (duplicateNameGroup) {
+        throw new Error(`Group name "${trimmedName}" already exists. Please choose a different name.`);
+      }
+      finalGroupName = trimmedName;
+    }
+
     const group: Group = {
       id: groupId,
       sessionId: currentSessionId,
-      name: name || this.generateGroupName(),
+      name: finalGroupName,
       representative: representative.toLowerCase(),
       members: members.map(email => email.toLowerCase()),
       status: 'pending',
@@ -263,8 +308,8 @@ class BallotService {
     return true;
   }
 
-  // Ballot management
-  runBallot(sessionId?: string): BallotResult {
+  // Two-phase ballot management
+  startBallot(sessionId?: string): BallotResult {
     const currentSessionId = sessionId || this.data.currentSessionId;
     if (!currentSessionId) {
       throw new Error('No active session available for ballot');
@@ -278,32 +323,101 @@ class BallotService {
       throw new Error('No approved groups available for ballot in current session');
     }
 
-    // Lock all approved groups
+    // Change approved groups to ballot-ready status
     approvedGroups.forEach(group => {
-      group.status = 'locked';
+      group.status = 'ballot-ready';
     });
-
-    // Create randomized entries
-    const shuffledGroups = this.shuffleArray([...approvedGroups]);
-    const entries: BallotEntry[] = shuffledGroups.map((group, index) => ({
-      groupId: group.id,
-      position: index + 1,
-      drawnAt: new Date(),
-    }));
 
     const totalParticipants = approvedGroups.reduce((sum, group) => sum + group.members.length, 0);
 
     const result: BallotResult = {
       sessionId: currentSessionId,
-      entries,
+      entries: [], // No entries yet - representatives will draw
       totalGroups: approvedGroups.length,
       totalParticipants,
       drawnAt: new Date(),
+      ballotStatus: 'in-progress',
+      startedAt: new Date(),
     };
 
     this.data.ballotResults = result;
     this.saveData();
     return result;
+  }
+
+  // Representative draws for their group
+  drawForGroup(groupId: string, representativeEmail: string): number {
+    const group = this.data.groups.find(g => g.id === groupId);
+    if (!group) {
+      throw new Error('Group not found');
+    }
+
+    if (group.representative.toLowerCase() !== representativeEmail.toLowerCase()) {
+      throw new Error('Only the group representative can draw for this group');
+    }
+
+    if (group.status !== 'ballot-ready') {
+      throw new Error('Group is not ready for ballot drawing');
+    }
+
+    if (!this.data.ballotResults || this.data.ballotResults.ballotStatus !== 'in-progress') {
+      throw new Error('Ballot session is not active');
+    }
+
+    // Get all available positions (positions not yet drawn by other groups)
+    const drawnPositions = this.data.groups
+      .filter(g => g.sessionId === group.sessionId && g.ballotPosition)
+      .map(g => g.ballotPosition!);
+    
+    const totalGroups = this.data.groups.filter(g => 
+      g.sessionId === group.sessionId && g.status === 'ballot-ready'
+    ).length;
+    
+    const availablePositions = Array.from({length: totalGroups}, (_, i) => i + 1)
+      .filter(pos => !drawnPositions.includes(pos));
+    
+    if (availablePositions.length === 0) {
+      throw new Error('No available positions to draw');
+    }
+
+    // Randomly select from available positions
+    const randomIndex = Math.floor(Math.random() * availablePositions.length);
+    const drawnPosition = availablePositions[randomIndex];
+
+    // Update group with drawn position
+    group.status = 'ballot-drawn';
+    group.ballotPosition = drawnPosition;
+    group.ballotDrawnAt = new Date();
+
+    // Add to ballot results
+    this.data.ballotResults.entries.push({
+      groupId: group.id,
+      position: drawnPosition,
+      drawnAt: new Date(),
+    });
+
+    // Check if all groups have drawn
+    const allGroupsDrawn = this.data.groups
+      .filter(g => g.sessionId === group.sessionId && (g.status === 'ballot-ready' || g.status === 'ballot-drawn'))
+      .every(g => g.status === 'ballot-drawn');
+
+    if (allGroupsDrawn) {
+      this.data.ballotResults.ballotStatus = 'completed';
+      this.data.ballotResults.completedAt = new Date();
+      
+      // Lock all groups
+      this.data.groups
+        .filter(g => g.sessionId === group.sessionId && g.status === 'ballot-drawn')
+        .forEach(g => g.status = 'locked');
+    }
+
+    this.saveData();
+    return drawnPosition;
+  }
+
+  // Legacy method for backward compatibility
+  runBallot(sessionId?: string): BallotResult {
+    return this.startBallot(sessionId);
   }
 
   getBallotResults(sessionId?: string): BallotResult | null {
@@ -312,6 +426,21 @@ class BallotService {
       return null;
     }
     return this.data.ballotResults;
+  }
+
+  // Check if representative can draw for their group
+  canRepresentativeDraw(groupId: string, representativeEmail: string): boolean {
+    const group = this.data.groups.find(g => g.id === groupId);
+    return group?.representative.toLowerCase() === representativeEmail.toLowerCase() && 
+           group?.status === 'ballot-ready' &&
+           this.data.ballotResults?.ballotStatus === 'in-progress';
+  }
+
+  // Get ballot status for current session
+  getBallotStatus(sessionId?: string): string {
+    const results = this.getBallotResults(sessionId);
+    if (!results) return 'not-started';
+    return results.ballotStatus;
   }
 
   // Admin functions (deprecated - use authService instead)
@@ -360,36 +489,53 @@ class BallotService {
   }
 
   private generateGroupName(): string {
-    const adjectives = [
-      'Swift', 'Bright', 'Bold', 'Lucky', 'Golden', 'Silver', 'Royal', 'Elite',
-      'Prime', 'Star', 'Diamond', 'Crystal', 'Thunder', 'Lightning', 'Phoenix',
-      'Dragon', 'Eagle', 'Tiger', 'Lion', 'Wolf', 'Falcon', 'Hawk', 'Arrow',
-      'Rocket', 'Comet', 'Meteor', 'Galaxy', 'Nova', 'Stellar', 'Cosmic',
-      'Alpha', 'Beta', 'Gamma', 'Delta', 'Omega', 'Apex', 'Zenith', 'Summit'
+    const kellyYuWenWenSongs = [
+      // Write a Night of Heartbeat (2016)
+      '我只想写一首好歌曲', '一夜成长', '心跳',
+      
+      // Undefined (2018)
+      '偷不走的现在', '深度对话', '其实其实', '过去', '伤患', '奉陪', 
+      '体面', '交换手机', '你是我的',
+      
+      // Intermezzo (2021)
+      '白衣少年', '试探', '余地', '浪花', '配合', '要不要', 
+      '门前雪', '盲听',
+      
+      // It's Me (2023)
+      '是我', '你好', '过来人', '刺猬', '小心', '顽固天真', '影子',
+      
+      // Scorpio (2024)
+      '已读不回', '狼人', '原罪', '可惜', '夕阳向晚', '保持安静', 
+      '查理查理', '何必', '路人', '天蝎座'
     ];
     
-    const nouns = [
-      'Squad', 'Team', 'Crew', 'Alliance', 'Force', 'Legion', 'Guild', 'Circle',
-      'Order', 'Society', 'Union', 'Coalition', 'Band', 'Troop', 'Company',
-      'Division', 'Group', 'Unit', 'Wing', 'Core', 'Elite', 'Guard', 'Rangers',
-      'Knights', 'Warriors', 'Champions', 'Masters', 'Legends', 'Heroes',
-      'Titans', 'Guardians', 'Sentinels', 'Defenders', 'Crusaders', 'Pioneers'
-    ];
+    const currentSessionId = this.data.currentSessionId;
+    const existingGroupNames = this.data.groups
+      .filter(g => g.sessionId === currentSessionId && g.name)
+      .map(g => g.name!.toLowerCase());
     
-    const randomAdjective = adjectives[Math.floor(Math.random() * adjectives.length)];
-    const randomNoun = nouns[Math.floor(Math.random() * nouns.length)];
+    // Try to find a unique song name
+    const availableSongs = kellyYuWenWenSongs.filter(song => 
+      !existingGroupNames.includes(`${song} 組`.toLowerCase())
+    );
     
-    return `${randomAdjective} ${randomNoun}`;
+    if (availableSongs.length > 0) {
+      const randomSong = availableSongs[Math.floor(Math.random() * availableSongs.length)];
+      return `${randomSong} 組`;
+    }
+    
+    // If all songs are used, add numbers to make them unique
+    let counter = 1;
+    let baseName = '';
+    do {
+      const randomSong = kellyYuWenWenSongs[Math.floor(Math.random() * kellyYuWenWenSongs.length)];
+      baseName = `${randomSong} 組 ${counter}`;
+      counter++;
+    } while (existingGroupNames.includes(baseName.toLowerCase()) && counter <= 100);
+    
+    return baseName;
   }
 
-  private shuffleArray<T>(array: T[]): T[] {
-    const result = [...array];
-    for (let i = result.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [result[i], result[j]] = [result[j], result[i]];
-    }
-    return result;
-  }
 
   // Session management
   createSession(name: string, sessionDate: Date, createdBy: string): string {

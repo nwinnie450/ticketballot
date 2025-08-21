@@ -127,16 +127,16 @@ export function Header({ onNavigate, currentPage }: HeaderProps) {
               <button
                 onClick={() => onNavigate('login')}
                 className="text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 rounded-full transition-colors"
-                title="Switch User / Admin Login"
+                title="Switch User / Superadmin Login"
               >
                 🔄 Switch
               </button>
             )}
             
-            {/* Show current admin name if logged in */}
+            {/* Show current superadmin name if logged in */}
             {isAdminAuthenticated && currentAdmin && (
               <div className="hidden sm:block text-xs text-gray-500">
-                {currentAdmin}
+                Superadmin: {currentAdmin}
               </div>
             )}
 

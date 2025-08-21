@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { ballotService } from '../services/ballotService';
+import { authService } from '../services/authService';
 import type { Participant, Group, BallotResult, UserRole } from '../types';
 
 interface BallotContextType {
@@ -21,6 +22,10 @@ interface BallotContextType {
   removeGroup: (groupId: string) => Promise<void>;
   removeParticipant: (email: string) => Promise<void>;
   runBallot: () => Promise<void>;
+  startBallot: () => Promise<void>;
+  drawForGroup: (groupId: string, representativeEmail: string) => Promise<number>;
+  canRepresentativeDraw: (groupId: string, representativeEmail: string) => boolean;
+  getBallotStatus: () => string;
   setCurrentUser: (email: string | null) => void;
   setAdmin: (isAdmin: boolean) => void;
   
@@ -45,7 +50,7 @@ export function BallotProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const isAdmin = ballotService.isAdmin();
+  const isAdmin = authService.isAuthenticated();
   const stats = ballotService.getStats();
 
   const getUserRole = (): UserRole => {
@@ -125,6 +130,28 @@ export function BallotProvider({ children }: { children: ReactNode }) {
     });
   };
 
+  const startBallot = async () => {
+    await handleAsync(() => {
+      ballotService.startBallot();
+    });
+  };
+
+  const drawForGroup = async (groupId: string, representativeEmail: string): Promise<number> => {
+    let result: number = 0;
+    await handleAsync(() => {
+      result = ballotService.drawForGroup(groupId, representativeEmail);
+    });
+    return result;
+  };
+
+  const canRepresentativeDraw = (groupId: string, representativeEmail: string): boolean => {
+    return ballotService.canRepresentativeDraw(groupId, representativeEmail);
+  };
+
+  const getBallotStatus = (): string => {
+    return ballotService.getBallotStatus();
+  };
+
   const setCurrentUser = (email: string | null) => {
     ballotService.setCurrentUser(email);
     setCurrentUserState(email);
@@ -175,6 +202,10 @@ export function BallotProvider({ children }: { children: ReactNode }) {
     removeGroup,
     removeParticipant,
     runBallot,
+    startBallot,
+    drawForGroup,
+    canRepresentativeDraw,
+    getBallotStatus,
     setCurrentUser,
     setAdmin,
     designateRepresentative,

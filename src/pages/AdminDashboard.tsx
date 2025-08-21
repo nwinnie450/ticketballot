@@ -15,7 +15,8 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
     updateGroupStatus,
     removeParticipant,
     removeGroup,
-    runBallot,
+    startBallot,
+    getBallotStatus,
     designateRepresentative,
     removeRepresentativeRole,
     loading,
@@ -38,19 +39,23 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
     }
   };
 
-  const handleRunBallot = async () => {
-    if (!confirm('Are you sure you want to run the ballot? This cannot be undone.')) return;
+  const handleStartBallot = async () => {
+    if (!confirm('Start the ballot session? Representatives will then be able to draw their positions.')) return;
     
     try {
-      await runBallot();
+      await startBallot();
       setActiveTab('ballot');
     } catch (err) {
       // Error handled by context
     }
   };
 
-  const pendingGroups = groups.filter(g => g.status === 'pending');
+  const ballotStatus = getBallotStatus();
   const approvedGroups = groups.filter(g => g.status === 'approved');
+  const ballotReadyGroups = groups.filter(g => g.status === 'ballot-ready');
+  const ballotDrawnGroups = groups.filter(g => g.status === 'ballot-drawn');
+
+  const pendingGroups = groups.filter(g => g.status === 'pending');
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -66,11 +71,11 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
             <div className="flex items-center space-x-3">
               {!ballotResults && approvedGroups.length > 0 && (
                 <button
-                  onClick={handleRunBallot}
+                  onClick={handleStartBallot}
                   disabled={loading}
                   className="bg-primary-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-primary-700 disabled:opacity-50"
                 >
-                  🎲 Run Ballot
+                  🚀 Start Ballot Session
                 </button>
               )}
               <button
@@ -417,8 +422,16 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
                           </>
                         )}
                         
-                        {group.status === 'approved' && !ballotResults && (
+                        {group.status === 'approved' && ballotStatus === 'not-started' && (
                           <span className="text-success-600 text-sm">Ready for ballot</span>
+                        )}
+                        
+                        {group.status === 'ballot-ready' && (
+                          <span className="text-warning-600 text-sm">Waiting for rep to draw</span>
+                        )}
+                        
+                        {group.status === 'ballot-drawn' && (
+                          <span className="text-blue-600 text-sm">Position #{group.ballotPosition} drawn</span>
                         )}
                         
                         {group.status === 'locked' && (
@@ -442,18 +455,61 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
             <div className="card">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-lg font-semibold text-gray-900">Ballot Management</h3>
-                {!ballotResults && approvedGroups.length > 0 && (
+                {ballotStatus === 'not-started' && approvedGroups.length > 0 && (
                   <button
-                    onClick={handleRunBallot}
+                    onClick={handleStartBallot}
                     disabled={loading}
                     className="bg-primary-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-primary-700 disabled:opacity-50"
                   >
-                    🎲 Run Ballot Draw
+                    🚀 Start Ballot Session
                   </button>
                 )}
               </div>
 
-              {ballotResults ? (
+              {/* Ballot Status Overview */}
+              <div className="mb-6">
+                {ballotStatus === 'not-started' && (
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                    <div className="flex items-center space-x-3">
+                      <span className="text-gray-600 text-2xl">⏸️</span>
+                      <div>
+                        <h4 className="font-semibold text-gray-800">Ballot Not Started</h4>
+                        <p className="text-gray-600 text-sm">Click "Start Ballot Session" to begin the drawing process.</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                {ballotStatus === 'in-progress' && (
+                  <div className="bg-warning-50 border border-warning-200 rounded-lg p-4">
+                    <div className="flex items-center space-x-3">
+                      <span className="text-warning-600 text-2xl">⏳</span>
+                      <div>
+                        <h4 className="font-semibold text-warning-800">Ballot in Progress</h4>
+                        <p className="text-warning-700 text-sm">
+                          Representatives are drawing positions. {ballotDrawnGroups.length} of {ballotReadyGroups.length + ballotDrawnGroups.length} groups have completed their draws.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                {ballotStatus === 'completed' && (
+                  <div className="bg-success-50 border border-success-200 rounded-lg p-4">
+                    <div className="flex items-center space-x-3">
+                      <span className="text-success-600 text-2xl">✅</span>
+                      <div>
+                        <h4 className="font-semibold text-success-800">Ballot Completed</h4>
+                        <p className="text-success-700 text-sm">
+                          All groups have drawn their positions. Results are now available.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {ballotResults && ballotStatus === 'completed' ? (
                 <div className="space-y-4">
                   <div className="bg-success-50 border border-success-200 rounded-lg p-4">
                     <h4 className="font-semibold text-success-800 mb-2">✅ Ballot Completed</h4>
@@ -473,18 +529,68 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
                     </div>
                   </div>
 
+                  {/* Detailed Participant List Ordered by Position */}
+                  <div className="bg-white border border-gray-200 rounded-lg p-4">
+                    <h4 className="font-semibold text-gray-800 mb-4">🎯 Final Allocation Order</h4>
+                    <div className="space-y-4 max-h-96 overflow-y-auto">
+                      {ballotResults.entries
+                        .sort((a, b) => a.position - b.position)
+                        .map((entry) => {
+                          const group = groups.find(g => g.id === entry.groupId);
+                          if (!group) return null;
+                          
+                          return (
+                            <div key={entry.groupId} className="border border-gray-200 rounded-lg p-3">
+                              <div className="flex items-center mb-2">
+                                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary-100 text-primary-700 font-bold text-sm mr-3">
+                                  #{entry.position}
+                                </div>
+                                <div>
+                                  <h5 className="font-medium text-gray-900">
+                                    {group.name || `Group ${String.fromCharCode(64 + entry.position)}`}
+                                  </h5>
+                                  <p className="text-xs text-gray-500">
+                                    {group.members.length + 1} participants
+                                  </p>
+                                </div>
+                              </div>
+                              
+                              <div className="ml-11 space-y-1">
+                                {/* Representative first */}
+                                <div className="flex items-center text-sm">
+                                  <span className="inline-block w-16 text-xs text-purple-600 font-medium">Rep:</span>
+                                  <span className="text-gray-900">{group.representative}</span>
+                                </div>
+                                
+                                {/* Members */}
+                                {group.members.map((member, idx) => (
+                                  <div key={idx} className="flex items-center text-sm">
+                                    <span className="inline-block w-16 text-xs text-gray-500"></span>
+                                    <span className="text-gray-700">{member}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  </div>
+
                   <div className="flex gap-3">
                     <button onClick={() => onNavigate('results')} className="btn-primary">
                       View Public Results
                     </button>
                     <button
                       onClick={() => {
-                        const csvContent = ballotResults.entries.map(entry => {
-                          const group = groups.find(g => g.id === entry.groupId);
-                          return `${entry.position},"${group?.representative}","${group?.members.join('; ')}",${group?.members.length}`;
-                        }).join('\n');
+                        const csvContent = ballotResults.entries
+                          .sort((a, b) => a.position - b.position)
+                          .map(entry => {
+                            const group = groups.find(g => g.id === entry.groupId);
+                            const groupName = group?.name || `Group ${String.fromCharCode(64 + entry.position)}`;
+                            return `${entry.position},"${groupName}","${group?.representative}","${group?.members.join('; ')}",${(group?.members.length || 0) + 1}`;
+                          }).join('\n');
                         
-                        const blob = new Blob([`Position,Representative,Members,Size\n${csvContent}`], { type: 'text/csv' });
+                        const blob = new Blob([`Position,Group Name,Representative,Members,Total Size\n${csvContent}`], { type: 'text/csv' });
                         const url = window.URL.createObjectURL(blob);
                         const a = document.createElement('a');
                         a.href = url;
@@ -516,11 +622,11 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
                         {approvedGroups.length} approved groups ready for ballot draw.
                       </p>
                       <button
-                        onClick={handleRunBallot}
+                        onClick={handleStartBallot}
                         disabled={loading}
                         className="bg-primary-600 text-white px-8 py-3 rounded-lg font-medium hover:bg-primary-700 disabled:opacity-50"
                       >
-                        🎯 Run Ballot Now
+                        🚀 Start Ballot Session
                       </button>
                     </div>
                   )}

@@ -14,9 +14,11 @@ export interface Group {
   name?: string; // Optional group name
   representative: string;
   members: string[];
-  status: 'pending' | 'approved' | 'locked';
+  status: 'pending' | 'approved' | 'locked' | 'ballot-ready' | 'ballot-drawn';
   createdAt: Date;
   validatedAt?: Date;
+  ballotDrawnAt?: Date; // When representative performed the draw
+  ballotPosition?: number; // Position drawn by representative
 }
 
 export interface BallotEntry {
@@ -33,6 +35,8 @@ export interface BallotSession {
   createdBy: string;
   createdAt: Date;
   closedAt?: Date;
+  ballotStarted?: boolean;
+  ballotStartedAt?: Date;
 }
 
 export interface BallotResult {
@@ -41,6 +45,9 @@ export interface BallotResult {
   totalGroups: number;
   totalParticipants: number;
   drawnAt: Date;
+  ballotStatus: 'not-started' | 'in-progress' | 'completed';
+  startedAt?: Date;
+  completedAt?: Date;
 }
 
 export interface AdminUser {

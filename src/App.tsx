@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { BallotProvider } from './hooks/useBallot';
 import { Header } from './components/layout/Header';
 import { LandingPage } from './pages/LandingPage';
@@ -13,11 +13,24 @@ import { DemoButton } from './components/ui/DemoButton';
 import type { PageType } from './types';
 
 function AppContent() {
-  const [currentPage, setCurrentPage] = useState<PageType>('landing');
+  const [currentPage, setCurrentPage] = useState<PageType>(() => {
+    // Load saved page from localStorage or default to 'landing'
+    return (localStorage.getItem('currentPage') as PageType) || 'landing';
+  });
 
   const handleNavigate = (page: string) => {
-    setCurrentPage(page as PageType);
+    const newPage = page as PageType;
+    setCurrentPage(newPage);
+    // Save current page to localStorage
+    localStorage.setItem('currentPage', newPage);
   };
+
+  // Clear saved page when navigating to landing (for fresh start)
+  useEffect(() => {
+    if (currentPage === 'landing') {
+      localStorage.removeItem('currentPage');
+    }
+  }, [currentPage]);
 
   const renderPage = () => {
     switch (currentPage) {

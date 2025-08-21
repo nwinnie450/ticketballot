@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { useBallot } from '../hooks/useBallot';
 import { authService } from '../services/authService';
+import { ballotService } from '../services/ballotService';
 
 interface LoginPageProps {
   onNavigate: (page: string) => void;
 }
 
 export function LoginPage({ onNavigate }: LoginPageProps) {
-  const { setCurrentUser, participants } = useBallot();
+  const { setCurrentUser } = useBallot();
   const [step, setStep] = useState<'identify' | 'authenticate'>('identify');
   const [identifier, setIdentifier] = useState(''); // username or email
   const [userType, setUserType] = useState<'user' | 'admin' | null>(null);
@@ -24,35 +25,46 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
     try {
       const input = identifier.trim().toLowerCase();
       
+      
       // Check if it's an admin username (check with authService or default 'admin')
-      const isAdmin = input === 'admin' || authService.getAdmins().some(admin => 
-        admin.username.toLowerCase() === input
-      );
+      let isAdmin = input === 'admin'; // Always check for default admin
+      
+      try {
+        // Try to get admin list, but don't fail if authentication is required
+        const admins = authService.getAdmins();
+        isAdmin = isAdmin || admins.some(admin => 
+          admin.username.toLowerCase() === input
+        );
+      } catch (authError) {
+        // Continue with just the default 'admin' check
+      }
 
       if (isAdmin) {
         setUserType('admin');
         setStep('authenticate');
         setSuccess('Admin account detected. Please enter your password.');
       } else {
-        // Check if it's a registered participant email
-        const isUser = participants.some(p => 
+        // Check if it's a registered participant email (check all participants, not just current session)
+        const allParticipants = ballotService.getAllParticipants();
+        const isUser = allParticipants.some(p => 
           p.email.toLowerCase() === input
         );
 
         if (isUser) {
           // For users, login immediately without password
           setCurrentUser(input);
-          setSuccess('User login successful! Redirecting...');
+          setSuccess('Welcome! No password needed for participants. Redirecting...');
           setTimeout(() => {
             onNavigate('status');
-          }, 1000);
+          }, 1500);
           return; // Exit early, skip authentication step
         } else {
-          throw new Error('Username/email not found. Please check your input or register first.');
+          throw new Error('Email not found. Please check your input or ask admin to add you as participant.');
         }
       }
 
     } catch (err) {
+      console.log('Login Error:', err);
       setError(err instanceof Error ? err.message : 'Identification failed');
     } finally {
       setLoading(false);
@@ -103,12 +115,12 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
         <div className="text-center mb-8">
           <div className="text-4xl mb-4">🔐</div>
           <h1 className="text-3xl font-bold text-gray-900">
-            {step === 'identify' ? 'Login' : 'Enter Password'}
+            {step === 'identify' ? 'Login' : 'Superadmin Access'}
           </h1>
           <p className="text-gray-600 mt-2">
             {step === 'identify' 
-              ? 'Enter your username or email address' 
-              : `${userType === 'admin' ? 'Admin' : 'User'} login`
+              ? 'Enter superadmin username or participant email' 
+              : 'Superadmin authentication required'
             }
           </p>
         </div>
@@ -139,7 +151,7 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
           <form onSubmit={handleIdentify} className="space-y-4">
             <div>
               <label htmlFor="identifier" className="block text-sm font-medium text-gray-700 mb-1">
-                Username or Email
+                Superadmin or Participant Email
               </label>
               <input
                 type="text"
@@ -147,14 +159,14 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
                 className="input-field"
-                placeholder="admin or your-email@example.com"
+                placeholder="admin or participant-email@example.com"
                 required
                 disabled={loading}
                 autoComplete="username email"
                 autoFocus
               />
               <p className="text-xs text-gray-500 mt-1">
-                Enter 'admin' for admin access or your registered email for instant user access
+                Enter 'admin' for superadmin access or your participant email for instant access (no password needed for participants)
               </p>
             </div>
 
@@ -179,7 +191,7 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
                 </span>
                 <div>
                   <div className="font-medium text-blue-800">
-                    {userType === 'admin' ? 'Admin Account' : 'User Account'}
+                    {userType === 'admin' ? 'Superadmin Account' : 'Participant Account'}
                   </div>
                   <div className="text-sm text-blue-600">{identifier}</div>
                 </div>
@@ -198,7 +210,7 @@ export function LoginPage({ onNavigate }: LoginPageProps) {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="input-field"
-                    placeholder="Enter your admin password"
+                    placeholder="Enter superadmin password"
                     required
                     disabled={loading}
                     autoComplete="current-password"

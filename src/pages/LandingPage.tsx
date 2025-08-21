@@ -71,16 +71,18 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
                   <div className="mt-8">
                     <h3 className="text-lg font-semibold text-gray-900 mb-4">How it works:</h3>
                     <div className="space-y-2">
+                      {userRole === 'guest' && (
+                        <div className="flex items-center text-gray-600">
+                          <span className="text-primary-600 font-bold mr-2">1️⃣</span>
+                          Register your interest
+                        </div>
+                      )}
                       <div className="flex items-center text-gray-600">
-                        <span className="text-primary-600 font-bold mr-2">1️⃣</span>
-                        Register your interest
-                      </div>
-                      <div className="flex items-center text-gray-600">
-                        <span className="text-primary-600 font-bold mr-2">2️⃣</span>
+                        <span className="text-primary-600 font-bold mr-2">{userRole === 'guest' ? '2️⃣' : '1️⃣'}</span>
                         Form groups (1-3 people)
                       </div>
                       <div className="flex items-center text-gray-600">
-                        <span className="text-primary-600 font-bold mr-2">3️⃣</span>
+                        <span className="text-primary-600 font-bold mr-2">{userRole === 'guest' ? '3️⃣' : '2️⃣'}</span>
                         Random ballot determines order
                       </div>
                     </div>

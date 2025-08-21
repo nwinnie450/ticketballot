@@ -123,7 +123,7 @@ export function ResultsPage({ onNavigate }: ResultsPageProps) {
                           Position #{searchResult.position}
                         </h3>
                         <p className="text-success-700">
-                          Group of {searchResult.group.members.length} members
+                          {searchResult.group.name || 'Unnamed Group'} ({searchResult.group.members.length + 1} members)
                         </p>
                       </div>
                     </div>
@@ -160,10 +160,10 @@ export function ResultsPage({ onNavigate }: ResultsPageProps) {
               onClick={() => {
                 const csvContent = ballotResults.entries.map(entry => {
                   const group = groups.find(g => g.id === entry.groupId);
-                  return `${entry.position},${group?.members.length || 0},${group?.representative || ''}`;
+                  return `${entry.position},"${group?.name || 'Unnamed Group'}",${group?.members.length || 0},"${group?.representative || ''}"`;
                 }).join('\n');
                 
-                const blob = new Blob([`Position,Group Size,Representative\n${csvContent}`], { type: 'text/csv' });
+                const blob = new Blob([`Position,Group Name,Group Size,Representative\n${csvContent}`], { type: 'text/csv' });
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
@@ -202,7 +202,7 @@ export function ResultsPage({ onNavigate }: ResultsPageProps) {
                           #{entry.position}
                         </span>
                         <span className="text-gray-900 font-medium">
-                          Group {String.fromCharCode(64 + entry.position)}
+                          {group?.name || `Group ${String.fromCharCode(64 + entry.position)}`}
                         </span>
                       </div>
                       <p className="text-sm text-gray-600">
@@ -220,6 +220,107 @@ export function ResultsPage({ onNavigate }: ResultsPageProps) {
                 </div>
               );
             })}
+          </div>
+        </div>
+
+        {/* Detailed Participant List Ordered by Position */}
+        <div className="card">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold text-gray-900">🎯 Complete Allocation List</h2>
+            <button
+              onClick={() => {
+                // Create detailed allocation data for Excel
+                const allocationData: string[] = [];
+                
+                ballotResults.entries
+                  .sort((a, b) => a.position - b.position)
+                  .forEach((entry) => {
+                    const group = groups.find(g => g.id === entry.groupId);
+                    if (!group) return;
+                    
+                    const groupName = group.name || `Group ${String.fromCharCode(64 + entry.position)}`;
+                    
+                    // Add representative first
+                    allocationData.push(`${entry.position},"${groupName}","${group.representative}","Representative"`);
+                    
+                    // Add all members
+                    group.members.forEach((member) => {
+                      allocationData.push(`${entry.position},"${groupName}","${member}","Member"`);
+                    });
+                  });
+                
+                // Create CSV content (Excel can open CSV files)
+                const csvHeader = 'Position,Group Name,Participant Email,Role\n';
+                const csvContent = csvHeader + allocationData.join('\n');
+                
+                // Create and download file
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `complete-allocation-list-${new Date().toISOString().split('T')[0]}.csv`;
+                link.click();
+                window.URL.revokeObjectURL(url);
+              }}
+              className="btn-secondary text-sm flex items-center space-x-2"
+            >
+              <span>📊</span>
+              <span>Download Excel</span>
+            </button>
+          </div>
+          
+          <div className="space-y-4 max-h-96 overflow-y-auto">
+            {ballotResults.entries
+              .sort((a, b) => a.position - b.position)
+              .map((entry) => {
+                const group = groups.find(g => g.id === entry.groupId);
+                if (!group) return null;
+                
+                const display = getPositionDisplay(entry.position);
+                
+                return (
+                  <div key={entry.groupId} className={`border rounded-lg p-4 ${
+                    entry.position <= 3 
+                      ? 'bg-gradient-to-r from-yellow-50 to-orange-50 border-yellow-200' 
+                      : 'bg-white border-gray-200'
+                  }`}>
+                    <div className="flex items-center mb-3">
+                      <div className="flex items-center justify-center w-10 h-10 rounded-full bg-white shadow-sm mr-3">
+                        <span className="text-xl">{display.emoji}</span>
+                      </div>
+                      <div>
+                        <div className="flex items-center">
+                          <span className={`text-xl font-bold ${display.class} mr-2`}>
+                            #{entry.position}
+                          </span>
+                          <span className="text-gray-900 font-medium">
+                            {group.name || `Group ${String.fromCharCode(64 + entry.position)}`}
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-500">
+                          {group.members.length + 1} participants
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="ml-13 space-y-1">
+                      {/* Representative first */}
+                      <div className="flex items-center text-sm">
+                        <span className="inline-block w-12 text-xs text-purple-600 font-medium">Rep:</span>
+                        <span className="text-gray-900 font-medium">{group.representative}</span>
+                      </div>
+                      
+                      {/* Members */}
+                      {group.members.map((member, idx) => (
+                        <div key={idx} className="flex items-center text-sm">
+                          <span className="inline-block w-12 text-xs text-gray-500"></span>
+                          <span className="text-gray-700">{member}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
           </div>
         </div>
 

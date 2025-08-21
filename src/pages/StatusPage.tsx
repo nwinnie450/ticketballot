@@ -11,10 +11,19 @@ export function StatusPage({ onNavigate }: StatusPageProps) {
     groups, 
     participants, 
     ballotResults, 
-    setCurrentUser 
+    setCurrentUser,
+    drawForGroup,
+    canRepresentativeDraw,
+    getBallotStatus,
+    loading,
+    error,
+    clearError
   } = useBallot();
   
   const [emailInput, setEmailInput] = useState('');
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [drawResult, setDrawResult] = useState<number | null>(null);
+  const [showDrawResult, setShowDrawResult] = useState(false);
 
   const userGroup = groups.find(g => 
     g.representative.toLowerCase() === currentUser?.toLowerCase() ||
@@ -40,6 +49,32 @@ export function StatusPage({ onNavigate }: StatusPageProps) {
   };
 
   const userPosition = getUserPosition();
+
+  // Handle ballot drawing
+  const handleDrawBallot = async () => {
+    if (!userGroup || !currentUser) return;
+    
+    setIsDrawing(true);
+    clearError();
+    
+    try {
+      const position = await drawForGroup(userGroup.id, currentUser);
+      setDrawResult(position);
+      setShowDrawResult(true);
+      
+      // Auto-hide the result modal after 5 seconds
+      setTimeout(() => {
+        setShowDrawResult(false);
+      }, 5000);
+    } catch (err) {
+      console.error('Failed to draw ballot:', err);
+    } finally {
+      setIsDrawing(false);
+    }
+  };
+
+  const ballotStatus = getBallotStatus();
+  const isRepresentative = userGroup?.representative.toLowerCase() === currentUser?.toLowerCase();
 
   // Guest view - ask for email
   if (!currentUser) {
@@ -237,6 +272,8 @@ export function StatusPage({ onNavigate }: StatusPageProps) {
                   {userGroup.status === 'approved' && '✅'}
                   {userGroup.status === 'locked' && '🔒'}
                   {userGroup.status === 'pending' && '⏳'}
+                  {userGroup.status === 'ballot-ready' && '🎯'}
+                  {userGroup.status === 'ballot-drawn' && '🎲'}
                 </span>
                 <div>
                   <p className={`font-semibold ${
@@ -249,6 +286,8 @@ export function StatusPage({ onNavigate }: StatusPageProps) {
                     {userGroup.status === 'approved' && 'Group Approved'}
                     {userGroup.status === 'locked' && 'Ballot Complete'}
                     {userGroup.status === 'pending' && 'Pending Approval'}
+                    {userGroup.status === 'ballot-ready' && 'Ready to Draw'}
+                    {userGroup.status === 'ballot-drawn' && 'Draw Complete'}
                   </p>
                   <p className={`text-sm ${
                     userGroup.status === 'approved' 
@@ -260,6 +299,8 @@ export function StatusPage({ onNavigate }: StatusPageProps) {
                     {userGroup.status === 'approved' && 'Ready for ballot draw'}
                     {userGroup.status === 'locked' && 'Results available'}
                     {userGroup.status === 'pending' && 'Waiting for admin validation'}
+                    {userGroup.status === 'ballot-ready' && isRepresentative ? 'Click to draw your position!' : 'Waiting for representative to draw'}
+                    {userGroup.status === 'ballot-drawn' && `Position ${userGroup.ballotPosition} drawn`}
                   </p>
                 </div>
               </div>
@@ -311,8 +352,104 @@ export function StatusPage({ onNavigate }: StatusPageProps) {
           </div>
         </div>
 
+        {/* Ballot Drawing Card */}
+        {userGroup && userGroup.status === 'ballot-ready' && isRepresentative && (
+          <div className="card">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">🎲 Time to Draw!</h2>
+            
+            <div className="bg-primary-50 border border-primary-200 rounded-lg p-6 mb-6">
+              <div className="text-center">
+                <div className="text-4xl mb-4">🎯</div>
+                <h3 className="text-lg font-semibold text-primary-900 mb-2">
+                  Your Group is Ready for Ballot Draw
+                </h3>
+                <p className="text-primary-700 mb-4">
+                  As the representative of <strong>{userGroup.name || 'your group'}</strong>, you can now draw your position in the ballot.
+                </p>
+                <p className="text-sm text-primary-600">
+                  Click the button below to randomly draw your group's position.
+                </p>
+              </div>
+            </div>
+
+            <div className="text-center">
+              <button
+                onClick={handleDrawBallot}
+                disabled={isDrawing || loading}
+                className="btn-primary text-lg px-8 py-3 min-w-[200px]"
+              >
+                {isDrawing ? (
+                  <>
+                    <span className="inline-block animate-spin mr-2">🎲</span>
+                    Drawing...
+                  </>
+                ) : (
+                  <>
+                    🎲 Draw Position
+                  </>
+                )}
+              </button>
+            </div>
+
+            {error && (
+              <div className="mt-4 p-3 bg-error-50 border border-error-200 rounded-lg">
+                <p className="text-error-700 text-sm">⚠️ {error}</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Draw Result Modal */}
+        {showDrawResult && drawResult && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg p-8 max-w-md w-full text-center">
+              <div className="text-6xl mb-4">🎉</div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                Position #{drawResult}
+              </h3>
+              <p className="text-gray-600 mb-6">
+                Your group has drawn position #{drawResult} in the ballot!
+              </p>
+              <div className="space-y-3">
+                <p className="text-sm text-gray-500">
+                  Waiting for all groups to complete their draws...
+                </p>
+                <button
+                  onClick={() => setShowDrawResult(false)}
+                  className="btn-primary w-full"
+                >
+                  Continue
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Ballot Status Info */}
+        {ballotStatus === 'in-progress' && (
+          <div className="card">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">📊 Ballot Status</h2>
+            
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="flex items-start space-x-3">
+                <span className="text-blue-600 text-2xl">ℹ️</span>
+                <div>
+                  <h3 className="font-semibold text-blue-900 mb-1">Ballot in Progress</h3>
+                  <p className="text-blue-700 text-sm">
+                    {userGroup?.status === 'ballot-drawn' 
+                      ? 'Your group has completed the draw. Waiting for other groups to finish.' 
+                      : isRepresentative 
+                      ? 'You can now draw your position above.'
+                      : 'Waiting for your representative to draw your group\'s position.'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Ballot Results Card */}
-        {ballotResults && userPosition && (
+        {ballotResults && ballotResults.ballotStatus === 'completed' && userPosition && (
           <div className="card">
             <h2 className="text-xl font-bold text-gray-900 mb-4">Ballot Results</h2>
             
