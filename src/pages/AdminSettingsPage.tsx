@@ -7,8 +7,21 @@ interface AdminSettingsPageProps {
 }
 
 export function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps) {
-  const { clearBallotData } = useBallot();
-  const [activeTab, setActiveTab] = useState<'password' | 'admins' | 'system'>('password');
+  const { 
+    clearBallotData, 
+    participants, 
+    groups, 
+    registerParticipant,
+    removeParticipant,
+    designateRepresentative,
+    removeRepresentativeRole,
+    updateGroupStatus,
+    removeGroup,
+    loading: ballotLoading,
+    error: ballotError,
+    clearError: clearBallotError
+  } = useBallot();
+  const [activeTab, setActiveTab] = useState<'password' | 'admins' | 'users' | 'system'>('password');
   const [admins, setAdmins] = useState<any[]>([]);
   const [adminStats, setAdminStats] = useState<any>(null);
   const [loading, setLoading] = useState(false);
@@ -23,6 +36,9 @@ export function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps) {
   // Add admin form
   const [newUsername, setNewUsername] = useState('');
   const [newAdminPassword, setNewAdminPassword] = useState('');
+
+  // User management form
+  const [newUserEmail, setNewUserEmail] = useState('');
 
   useEffect(() => {
     loadData();
@@ -124,6 +140,52 @@ export function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps) {
     }
   };
 
+  // User management handlers
+  const handleAddUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    clearMessages();
+    setLoading(true);
+
+    try {
+      await registerParticipant(newUserEmail, 'admin');
+      setSuccess(`User '${newUserEmail}' added successfully`);
+      setNewUserEmail('');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to add user');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDesignateRep = async (email: string) => {
+    try {
+      await designateRepresentative(email);
+      setSuccess(`${email} designated as representative`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to designate representative');
+    }
+  };
+
+  const handleRemoveRepRole = async (email: string) => {
+    try {
+      await removeRepresentativeRole(email);
+      setSuccess(`Representative role removed from ${email}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to remove representative role');
+    }
+  };
+
+  const handleRemoveUser = async (email: string) => {
+    if (!confirm(`Remove user ${email}? This will also remove them from any groups.`)) return;
+    
+    try {
+      await removeParticipant(email);
+      setSuccess(`User ${email} removed successfully`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to remove user');
+    }
+  };
+
   if (!authService.isAuthenticated()) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -158,11 +220,14 @@ export function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps) {
         </div>
 
         {/* Messages */}
-        {error && (
+        {(error || ballotError) && (
           <div className="mb-6 bg-error-50 border border-error-200 rounded-lg p-4">
             <div className="flex items-center justify-between">
-              <span className="text-error-700">⚠️ {error}</span>
-              <button onClick={clearMessages} className="text-error-600 hover:text-error-800">×</button>
+              <span className="text-error-700">⚠️ {error || ballotError}</span>
+              <button onClick={() => {
+                clearMessages();
+                if (ballotError) clearBallotError();
+              }} className="text-error-600 hover:text-error-800">×</button>
             </div>
           </div>
         )}
@@ -211,6 +276,7 @@ export function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps) {
             {[
               { id: 'password', name: 'Change Password', icon: '🔒' },
               { id: 'admins', name: 'Manage Admins', icon: '👥' },
+              { id: 'users', name: 'Manage Users', icon: '👤' },
               { id: 'system', name: 'System', icon: '⚙️' },
             ].map((tab) => (
               <button
@@ -410,6 +476,229 @@ export function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps) {
                       ))}
                     </tbody>
                   </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'users' && (
+            <div className="space-y-6">
+              {/* Add New User */}
+              <div className="card">
+                <h3 className="text-lg font-semibold text-gray-900 mb-6">Add New User</h3>
+                
+                <form onSubmit={handleAddUser} className="space-y-4">
+                  <div>
+                    <label htmlFor="newUserEmail" className="block text-sm font-medium text-gray-700 mb-1">
+                      Email Address
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="email"
+                        id="newUserEmail"
+                        value={newUserEmail}
+                        onChange={(e) => setNewUserEmail(e.target.value)}
+                        className="flex-1 input-field"
+                        placeholder="user@example.com"
+                        required
+                        disabled={loading || ballotLoading}
+                        autoComplete="off"
+                      />
+                      <button
+                        type="submit"
+                        disabled={loading || ballotLoading || !newUserEmail.trim()}
+                        className="btn-primary"
+                      >
+                        {loading || ballotLoading ? 'Adding...' : 'Add User'}
+                      </button>
+                    </div>
+                  </div>
+                </form>
+              </div>
+
+              {/* User Management */}
+              <div className="card">
+                <h3 className="text-lg font-semibold text-gray-900 mb-6">User Management ({participants.length})</h3>
+                
+                <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 rounded-lg">
+                  <table className="min-w-full divide-y divide-gray-300">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Email
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Role
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Group Status
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Added
+                        </th>
+                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Actions
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {participants.map((participant, index) => {
+                        const inGroup = groups.find(g => 
+                          g.representative.toLowerCase() === participant.email.toLowerCase() ||
+                          g.members.some(m => m.toLowerCase() === participant.email.toLowerCase())
+                        );
+
+                        return (
+                          <tr key={index}>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              {participant.email}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                                participant.role === 'representative' 
+                                  ? 'bg-purple-100 text-purple-800' 
+                                  : 'bg-gray-100 text-gray-800'
+                              }`}>
+                                {participant.role}
+                              </span>
+                              {participant.role === 'representative' && participant.designatedBy && (
+                                <div className="text-xs text-gray-500 mt-1">
+                                  by {participant.designatedBy}
+                                </div>
+                              )}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {inGroup ? (
+                                <span className="text-success-600">In Group</span>
+                              ) : (
+                                <span className="text-gray-500">No Group</span>
+                              )}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {new Date(participant.registeredAt).toLocaleDateString()}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                              <div className="flex items-center justify-end space-x-2">
+                                {participant.role === 'user' ? (
+                                  <button
+                                    onClick={() => handleDesignateRep(participant.email)}
+                                    disabled={loading || ballotLoading}
+                                    className="text-purple-600 hover:text-purple-800"
+                                    title="Make Representative"
+                                  >
+                                    👑 Rep
+                                  </button>
+                                ) : (
+                                  <button
+                                    onClick={() => handleRemoveRepRole(participant.email)}
+                                    disabled={loading || ballotLoading}
+                                    className="text-gray-600 hover:text-gray-800"
+                                    title="Remove Representative Role"
+                                  >
+                                    👤 User
+                                  </button>
+                                )}
+                                <button
+                                  onClick={() => handleRemoveUser(participant.email)}
+                                  disabled={loading || ballotLoading}
+                                  className="text-error-600 hover:text-error-900"
+                                >
+                                  Remove
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+
+                  {participants.length === 0 && (
+                    <div className="text-center py-8 text-gray-500">
+                      No participants yet
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Group Management */}
+              <div className="card">
+                <h3 className="text-lg font-semibold text-gray-900 mb-6">Group Management ({groups.length})</h3>
+
+                <div className="space-y-4">
+                  {groups.map((group) => (
+                    <div key={group.id} className="border border-gray-200 rounded-lg p-4">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-3">
+                            <h4 className="font-medium text-gray-900">
+                              Group ({group.members.length} members)
+                            </h4>
+                            <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                              group.status === 'approved' 
+                                ? 'bg-success-100 text-success-700'
+                                : group.status === 'locked'
+                                ? 'bg-blue-100 text-blue-700'
+                                : 'bg-warning-100 text-warning-700'
+                            }`}>
+                              {group.status}
+                            </span>
+                          </div>
+                          
+                          <div className="mt-2 space-y-1">
+                            <p className="text-sm text-gray-600">
+                              <strong>Representative:</strong> {group.representative}
+                            </p>
+                            <p className="text-sm text-gray-600">
+                              <strong>Members:</strong> {group.members.join(', ')}
+                            </p>
+                            <p className="text-sm text-gray-500">
+                              Created: {new Date(group.createdAt).toLocaleString()}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center space-x-2 ml-4">
+                          {group.status === 'pending' && (
+                            <>
+                              <button
+                                onClick={() => updateGroupStatus(group.id, 'approved')}
+                                disabled={loading || ballotLoading}
+                                className="text-success-600 hover:text-success-800 text-sm font-medium"
+                              >
+                                ✅ Approve
+                              </button>
+                              <button
+                                onClick={() => {
+                                  if (confirm('Remove this group?')) {
+                                    removeGroup(group.id);
+                                  }
+                                }}
+                                disabled={loading || ballotLoading}
+                                className="text-error-600 hover:text-error-800 text-sm font-medium"
+                              >
+                                ❌ Reject
+                              </button>
+                            </>
+                          )}
+                          
+                          {group.status === 'approved' && (
+                            <span className="text-success-600 text-sm">Ready for ballot</span>
+                          )}
+                          
+                          {group.status === 'locked' && (
+                            <span className="text-blue-600 text-sm">Ballot completed</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+
+                  {groups.length === 0 && (
+                    <div className="text-center py-8 text-gray-500">
+                      No groups created yet
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
