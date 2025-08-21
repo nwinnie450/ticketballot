@@ -157,7 +157,7 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
                           </button>
                         </div>
                       </>
-                    ) : userRole === 'participant' ? (
+                    ) : (userRole === 'user' || userRole === 'representative') ? (
                       <div className="text-center">
                         <div className="text-4xl mb-4">✅</div>
                         <h2 className="text-2xl font-bold text-gray-900 mb-4">You're Registered!</h2>

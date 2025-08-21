@@ -10,19 +10,13 @@ import { AdminLoginPage } from './pages/AdminLoginPage';
 import { AdminSettingsPage } from './pages/AdminSettingsPage';
 import { LoginPage } from './pages/LoginPage';
 import { DemoButton } from './components/ui/DemoButton';
-import { authService } from './services/authService';
 import type { PageType } from './types';
 
 function AppContent() {
   const [currentPage, setCurrentPage] = useState<PageType>('landing');
-  const [authRefresh, setAuthRefresh] = useState(0);
 
   const handleNavigate = (page: string) => {
     setCurrentPage(page as PageType);
-  };
-
-  const handleAuthChange = () => {
-    setAuthRefresh(prev => prev + 1);
   };
 
   const renderPage = () => {
@@ -38,7 +32,7 @@ function AppContent() {
       case 'login':
         return <LoginPage onNavigate={handleNavigate} />;
       case 'admin-login':
-        return <AdminLoginPage onNavigate={handleNavigate} onLoginSuccess={handleAuthChange} />;
+        return <AdminLoginPage onNavigate={handleNavigate} onLoginSuccess={() => {}} />;
       case 'admin-dashboard':
         return <AdminDashboard onNavigate={handleNavigate} />;
       case 'admin-settings':

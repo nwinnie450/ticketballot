@@ -313,14 +313,14 @@ class BallotService {
     return this.data.ballotResults;
   }
 
-  // Admin functions
-  setAdmin(isAdmin: boolean): void {
-    this.data.isAdmin = isAdmin;
-    this.saveData();
+  // Admin functions (deprecated - use authService instead)
+  setAdmin(_isAdmin: boolean): void {
+    // This function is deprecated, admin authentication is now handled by authService
   }
 
   isAdmin(): boolean {
-    return this.data.isAdmin;
+    // This function is deprecated, admin authentication is now handled by authService
+    return false;
   }
 
   setCurrentUser(email: string | null): void {
