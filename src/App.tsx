@@ -6,14 +6,22 @@ import { GroupFormationPage } from './pages/GroupFormationPage';
 import { StatusPage } from './pages/StatusPage';
 import { ResultsPage } from './pages/ResultsPage';
 import { AdminDashboard } from './pages/AdminDashboard';
+import { AdminLoginPage } from './pages/AdminLoginPage';
+import { AdminSettingsPage } from './pages/AdminSettingsPage';
 import { DemoButton } from './components/ui/DemoButton';
+import { authService } from './services/authService';
 import type { PageType } from './types';
 
 function AppContent() {
   const [currentPage, setCurrentPage] = useState<PageType>('landing');
+  const [authRefresh, setAuthRefresh] = useState(0);
 
   const handleNavigate = (page: string) => {
     setCurrentPage(page as PageType);
+  };
+
+  const handleAuthChange = () => {
+    setAuthRefresh(prev => prev + 1);
   };
 
   const renderPage = () => {
@@ -26,8 +34,12 @@ function AppContent() {
         return <StatusPage onNavigate={handleNavigate} />;
       case 'results':
         return <ResultsPage onNavigate={handleNavigate} />;
+      case 'admin-login':
+        return <AdminLoginPage onNavigate={handleNavigate} onLoginSuccess={handleAuthChange} />;
       case 'admin-dashboard':
         return <AdminDashboard onNavigate={handleNavigate} />;
+      case 'admin-settings':
+        return <AdminSettingsPage onNavigate={handleNavigate} />;
       default:
         return <LandingPage onNavigate={handleNavigate} />;
     }

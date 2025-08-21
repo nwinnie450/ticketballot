@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useBallot } from '../../hooks/useBallot';
+import { authService } from '../../services/authService';
 
 interface HeaderProps {
   onNavigate: (page: string) => void;
@@ -7,29 +8,45 @@ interface HeaderProps {
 }
 
 export function Header({ onNavigate, currentPage }: HeaderProps) {
-  const { userRole, currentUser, setAdmin } = useBallot();
+  const { userRole, currentUser } = useBallot();
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  
+  const isAdminAuthenticated = authService.isAuthenticated();
+  const currentAdmin = authService.getCurrentAdmin();
 
-  const handleRoleSwitch = () => {
-    if (userRole === 'admin') {
-      setAdmin(false);
-      onNavigate('landing');
+  const handleAdminAction = () => {
+    if (isAdminAuthenticated) {
+      // If admin is logged in, show logout option or go to dashboard
+      if (currentPage === 'admin-dashboard' || currentPage === 'admin-settings') {
+        authService.logout();
+        onNavigate('landing');
+      } else {
+        onNavigate('admin-dashboard');
+      }
     } else {
-      setAdmin(true);
-      onNavigate('admin-dashboard');
+      // If not logged in, go to login page
+      onNavigate('admin-login');
     }
   };
 
   const navItems = [
-    { id: 'landing', label: 'Home', roles: ['guest', 'participant', 'admin'] },
+    { id: 'landing', label: 'Home', roles: ['guest', 'user', 'representative', 'admin'] },
     { id: 'registration', label: 'Register', roles: ['guest'] },
-    { id: 'group-formation', label: 'Create Group', roles: ['participant'] },
-    { id: 'status', label: 'My Status', roles: ['participant'] },
-    { id: 'results', label: 'Results', roles: ['guest', 'participant', 'admin'] },
-    { id: 'admin-dashboard', label: 'Dashboard', roles: ['admin'] },
+    { id: 'group-formation', label: 'Create Group', roles: ['representative'] },
+    { id: 'status', label: 'My Status', roles: ['user', 'representative'] },
+    { id: 'results', label: 'Results', roles: ['guest', 'user', 'representative', 'admin'] },
   ];
 
-  const visibleItems = navItems.filter(item => item.roles.includes(userRole));
+  // Add admin navigation items if authenticated
+  const adminNavItems = isAdminAuthenticated ? [
+    { id: 'admin-dashboard', label: 'Dashboard', roles: ['admin'] },
+    { id: 'admin-settings', label: 'Settings', roles: ['admin'] },
+  ] : [];
+
+  const allNavItems = [...navItems, ...adminNavItems];
+  const visibleItems = allNavItems.filter(item => 
+    item.roles.includes(userRole) || (isAdminAuthenticated && item.roles.includes('admin'))
+  );
 
   return (
     <header className="bg-white shadow-sm border-b border-gray-200">
@@ -71,14 +88,27 @@ export function Header({ onNavigate, currentPage }: HeaderProps) {
               </div>
             )}
             
-            {/* Role Switch Button */}
+            {/* Admin Button */}
             <button
-              onClick={handleRoleSwitch}
+              onClick={handleAdminAction}
               className="text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 rounded-full transition-colors"
-              title={userRole === 'admin' ? 'Switch to User View' : 'Admin Login'}
+              title={isAdminAuthenticated ? 
+                (currentPage.startsWith('admin-') ? 'Logout' : 'Admin Dashboard') : 
+                'Admin Login'
+              }
             >
-              {userRole === 'admin' ? '👤 User' : '⚙️ Admin'}
+              {isAdminAuthenticated ? 
+                (currentPage.startsWith('admin-') ? '🚪 Logout' : '⚙️ Admin') : 
+                '🔐 Admin'
+              }
             </button>
+            
+            {/* Show current admin name if logged in */}
+            {isAdminAuthenticated && currentAdmin && (
+              <div className="hidden sm:block text-xs text-gray-500">
+                {currentAdmin}
+              </div>
+            )}
 
             {/* Mobile menu button */}
             <button

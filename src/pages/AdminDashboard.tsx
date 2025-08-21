@@ -16,6 +16,8 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
     removeParticipant,
     removeGroup,
     runBallot,
+    designateRepresentative,
+    removeRepresentativeRole,
     loading,
     error,
     clearError 
@@ -244,13 +246,16 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
                         Email
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Role
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Added By
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Date
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Status
+                        Group Status
                       </th>
                       <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Actions
@@ -268,6 +273,20 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
                         <tr key={index}>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                             {participant.email}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                              participant.role === 'representative' 
+                                ? 'bg-purple-100 text-purple-800' 
+                                : 'bg-gray-100 text-gray-800'
+                            }`}>
+                              {participant.role}
+                            </span>
+                            {participant.role === 'representative' && participant.designatedBy && (
+                              <div className="text-xs text-gray-500 mt-1">
+                                by {participant.designatedBy}
+                              </div>
+                            )}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
@@ -289,17 +308,38 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
                             )}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <button
-                              onClick={() => {
-                                if (confirm(`Remove ${participant.email}?`)) {
-                                  removeParticipant(participant.email);
-                                }
-                              }}
-                              disabled={loading}
-                              className="text-error-600 hover:text-error-900"
-                            >
-                              Remove
-                            </button>
+                            <div className="flex items-center justify-end space-x-2">
+                              {participant.role === 'user' ? (
+                                <button
+                                  onClick={() => designateRepresentative(participant.email)}
+                                  disabled={loading}
+                                  className="text-purple-600 hover:text-purple-800"
+                                  title="Make Representative"
+                                >
+                                  👑 Rep
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => removeRepresentativeRole(participant.email)}
+                                  disabled={loading}
+                                  className="text-gray-600 hover:text-gray-800"
+                                  title="Remove Representative Role"
+                                >
+                                  👤 User
+                                </button>
+                              )}
+                              <button
+                                onClick={() => {
+                                  if (confirm(`Remove ${participant.email}?`)) {
+                                    removeParticipant(participant.email);
+                                  }
+                                }}
+                                disabled={loading}
+                                className="text-error-600 hover:text-error-900"
+                              >
+                                Remove
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       );

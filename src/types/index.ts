@@ -2,10 +2,15 @@ export interface Participant {
   email: string;
   registeredAt: Date;
   addedBy: 'self' | 'admin';
+  role: 'user' | 'representative'; // New role field
+  designatedBy?: string; // Who designated them as representative
+  designatedAt?: Date;
+  sessionId: string; // Which session they belong to
 }
 
 export interface Group {
   id: string;
+  sessionId: string; // Which session this group belongs to
   representative: string;
   members: string[];
   status: 'pending' | 'approved' | 'locked';
@@ -19,22 +24,50 @@ export interface BallotEntry {
   drawnAt: Date;
 }
 
+export interface BallotSession {
+  id: string;
+  name: string;
+  sessionDate: Date;
+  isActive: boolean;
+  createdBy: string;
+  createdAt: Date;
+  closedAt?: Date;
+}
+
 export interface BallotResult {
+  sessionId: string;
   entries: BallotEntry[];
   totalGroups: number;
   totalParticipants: number;
   drawnAt: Date;
 }
 
+export interface AdminUser {
+  username: string;
+  password: string;
+  createdAt: Date;
+  createdBy: string;
+  lastLogin?: Date;
+}
+
+export interface AuthState {
+  isAuthenticated: boolean;
+  currentAdmin: string | null;
+  loginTime?: Date;
+}
+
 export interface AppState {
   participants: Participant[];
   groups: Group[];
   ballotResults: BallotResult | null;
-  isAdmin: boolean;
+  ballotSessions: BallotSession[];
+  currentSessionId: string | null;
   currentUser: string | null;
+  admins: AdminUser[];
+  auth: AuthState;
 }
 
-export type UserRole = 'participant' | 'admin' | 'guest';
+export type UserRole = 'user' | 'representative' | 'admin' | 'guest';
 
 export type PageType = 
   | 'landing' 
@@ -42,7 +75,9 @@ export type PageType =
   | 'group-formation' 
   | 'status' 
   | 'results' 
+  | 'admin-login'
   | 'admin-dashboard'
   | 'admin-participants'
   | 'admin-groups'
-  | 'admin-ballot';
+  | 'admin-ballot'
+  | 'admin-settings';

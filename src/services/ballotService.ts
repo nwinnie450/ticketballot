@@ -1,4 +1,4 @@
-import type { AppState, Participant, Group, BallotResult, BallotEntry } from '../types';
+import type { AppState, Participant, Group, BallotResult, BallotEntry, BallotSession } from '../types';
 
 const STORAGE_KEY = 'ticket-ballot-data';
 
@@ -7,8 +7,14 @@ class BallotService {
     participants: [],
     groups: [],
     ballotResults: null,
-    isAdmin: false,
+    ballotSessions: [],
+    currentSessionId: null,
     currentUser: null,
+    admins: [],
+    auth: {
+      isAuthenticated: false,
+      currentAdmin: null,
+    },
   };
 
   constructor() {
@@ -56,7 +62,7 @@ class BallotService {
   }
 
   // Participant management
-  registerParticipant(email: string, addedBy: 'self' | 'admin' = 'self'): boolean {
+  registerParticipant(email: string, addedBy: 'self' | 'admin' = 'self', sessionId?: string): boolean {
     if (!this.isValidEmail(email)) {
       throw new Error('Invalid email address');
     }
@@ -65,10 +71,15 @@ class BallotService {
       throw new Error('Email already registered');
     }
 
+    // Use current session or create default session
+    const currentSessionId = sessionId || this.data.currentSessionId || this.createDefaultSession();
+
     this.data.participants.push({
       email: email.toLowerCase(),
       registeredAt: new Date(),
       addedBy,
+      role: 'user', // Default role is user
+      sessionId: currentSessionId,
     });
     
     this.saveData();
@@ -79,7 +90,14 @@ class BallotService {
     return this.data.participants.some(p => p.email.toLowerCase() === email.toLowerCase());
   }
 
-  getParticipants(): Participant[] {
+  getParticipants(sessionId?: string): Participant[] {
+    const currentSessionId = sessionId || this.data.currentSessionId;
+    if (!currentSessionId) return [];
+    
+    return this.data.participants.filter(p => p.sessionId === currentSessionId);
+  }
+
+  getAllParticipants(): Participant[] {
     return [...this.data.participants];
   }
 
@@ -98,10 +116,58 @@ class BallotService {
     return true;
   }
 
+  // Role management
+  designateRepresentative(email: string, designatedBy: string): boolean {
+    const participant = this.data.participants.find(p => p.email.toLowerCase() === email.toLowerCase());
+    if (!participant) {
+      throw new Error('Participant not found');
+    }
+
+    participant.role = 'representative';
+    participant.designatedBy = designatedBy;
+    participant.designatedAt = new Date();
+    
+    this.saveData();
+    return true;
+  }
+
+  removeRepresentativeRole(email: string): boolean {
+    const participant = this.data.participants.find(p => p.email.toLowerCase() === email.toLowerCase());
+    if (!participant) {
+      throw new Error('Participant not found');
+    }
+
+    participant.role = 'user';
+    participant.designatedBy = undefined;
+    participant.designatedAt = undefined;
+    
+    this.saveData();
+    return true;
+  }
+
+  getParticipantRole(email: string): 'user' | 'representative' | null {
+    const participant = this.data.participants.find(p => p.email.toLowerCase() === email.toLowerCase());
+    return participant ? participant.role : null;
+  }
+
+  getRepresentatives(sessionId?: string): Participant[] {
+    const currentSessionId = sessionId || this.data.currentSessionId;
+    return this.data.participants.filter(p => 
+      p.role === 'representative' && 
+      (!currentSessionId || p.sessionId === currentSessionId)
+    );
+  }
+
   // Group management
   createGroup(representative: string, members: string[]): string {
     if (!this.isParticipantRegistered(representative)) {
       throw new Error('Representative must be registered');
+    }
+
+    // Check if representative has the right role
+    const repRole = this.getParticipantRole(representative);
+    if (repRole !== 'representative') {
+      throw new Error('Only designated representatives can create groups');
     }
 
     // Validate all members are registered
@@ -114,21 +180,27 @@ class BallotService {
       throw new Error('Groups must have 1-3 members');
     }
 
-    // Check if representative is already in another group
+    const currentSessionId = this.data.currentSessionId || this.createDefaultSession();
+
+    // Check if representative is already in another group in current session
     const existingGroup = this.data.groups.find(g => 
-      g.representative.toLowerCase() === representative.toLowerCase() ||
-      g.members.some(m => m.toLowerCase() === representative.toLowerCase())
+      g.sessionId === currentSessionId && (
+        g.representative.toLowerCase() === representative.toLowerCase() ||
+        g.members.some(m => m.toLowerCase() === representative.toLowerCase())
+      )
     );
 
     if (existingGroup) {
-      throw new Error('Representative is already in a group');
+      throw new Error('Representative is already in a group for this session');
     }
 
-    // Check if any members are already in other groups
+    // Check if any members are already in other groups in current session
     const conflictingMembers = members.filter(email => 
       this.data.groups.some(g => 
-        g.members.some(m => m.toLowerCase() === email.toLowerCase()) ||
-        g.representative.toLowerCase() === email.toLowerCase()
+        g.sessionId === currentSessionId && (
+          g.members.some(m => m.toLowerCase() === email.toLowerCase()) ||
+          g.representative.toLowerCase() === email.toLowerCase()
+        )
       )
     );
 
@@ -139,6 +211,7 @@ class BallotService {
     const groupId = this.generateId();
     const group: Group = {
       id: groupId,
+      sessionId: currentSessionId,
       representative: representative.toLowerCase(),
       members: members.map(email => email.toLowerCase()),
       status: 'pending',
@@ -150,14 +223,20 @@ class BallotService {
     return groupId;
   }
 
-  getGroups(): Group[] {
-    return [...this.data.groups];
+  getGroups(sessionId?: string): Group[] {
+    const currentSessionId = sessionId || this.data.currentSessionId;
+    if (!currentSessionId) return [];
+    
+    return this.data.groups.filter(g => g.sessionId === currentSessionId);
   }
 
-  getGroupByUser(email: string): Group | undefined {
+  getGroupByUser(email: string, sessionId?: string): Group | undefined {
+    const currentSessionId = sessionId || this.data.currentSessionId;
     return this.data.groups.find(g => 
-      g.representative.toLowerCase() === email.toLowerCase() ||
-      g.members.some(m => m.toLowerCase() === email.toLowerCase())
+      g.sessionId === currentSessionId && (
+        g.representative.toLowerCase() === email.toLowerCase() ||
+        g.members.some(m => m.toLowerCase() === email.toLowerCase())
+      )
     );
   }
 
@@ -184,11 +263,18 @@ class BallotService {
   }
 
   // Ballot management
-  runBallot(): BallotResult {
-    const approvedGroups = this.data.groups.filter(g => g.status === 'approved');
+  runBallot(sessionId?: string): BallotResult {
+    const currentSessionId = sessionId || this.data.currentSessionId;
+    if (!currentSessionId) {
+      throw new Error('No active session available for ballot');
+    }
+
+    const approvedGroups = this.data.groups.filter(g => 
+      g.sessionId === currentSessionId && g.status === 'approved'
+    );
     
     if (approvedGroups.length === 0) {
-      throw new Error('No approved groups available for ballot');
+      throw new Error('No approved groups available for ballot in current session');
     }
 
     // Lock all approved groups
@@ -207,6 +293,7 @@ class BallotService {
     const totalParticipants = approvedGroups.reduce((sum, group) => sum + group.members.length, 0);
 
     const result: BallotResult = {
+      sessionId: currentSessionId,
       entries,
       totalGroups: approvedGroups.length,
       totalParticipants,
@@ -218,7 +305,11 @@ class BallotService {
     return result;
   }
 
-  getBallotResults(): BallotResult | null {
+  getBallotResults(sessionId?: string): BallotResult | null {
+    const currentSessionId = sessionId || this.data.currentSessionId;
+    if (!this.data.ballotResults || this.data.ballotResults.sessionId !== currentSessionId) {
+      return null;
+    }
     return this.data.ballotResults;
   }
 
@@ -276,14 +367,90 @@ class BallotService {
     return result;
   }
 
+  // Session management
+  createSession(name: string, sessionDate: Date, createdBy: string): string {
+    const sessionId = this.generateId();
+    const session: BallotSession = {
+      id: sessionId,
+      name,
+      sessionDate,
+      isActive: true,
+      createdBy,
+      createdAt: new Date(),
+    };
+
+    this.data.ballotSessions.push(session);
+    
+    // Set as current session if it's the first one or if no current session
+    if (!this.data.currentSessionId || this.data.ballotSessions.length === 1) {
+      this.data.currentSessionId = sessionId;
+    }
+    
+    this.saveData();
+    return sessionId;
+  }
+
+  setCurrentSession(sessionId: string): boolean {
+    const session = this.data.ballotSessions.find(s => s.id === sessionId);
+    if (!session) {
+      throw new Error('Session not found');
+    }
+
+    this.data.currentSessionId = sessionId;
+    this.saveData();
+    return true;
+  }
+
+  closeSession(sessionId: string): boolean {
+    const session = this.data.ballotSessions.find(s => s.id === sessionId);
+    if (!session) return false;
+
+    session.isActive = false;
+    session.closedAt = new Date();
+    
+    // If this was the current session, clear it
+    if (this.data.currentSessionId === sessionId) {
+      this.data.currentSessionId = null;
+    }
+    
+    this.saveData();
+    return true;
+  }
+
+  getSessions(): BallotSession[] {
+    return [...this.data.ballotSessions];
+  }
+
+  getCurrentSession(): BallotSession | null {
+    if (!this.data.currentSessionId) return null;
+    return this.data.ballotSessions.find(s => s.id === this.data.currentSessionId) || null;
+  }
+
+  createDefaultSession(): string {
+    if (this.data.ballotSessions.length === 0) {
+      return this.createSession(
+        'Default Session',
+        new Date(),
+        'system'
+      );
+    }
+    return this.data.currentSessionId || this.data.ballotSessions[0].id;
+  }
+
   // Reset/Clear data (for testing)
   clearAll(): void {
     this.data = {
       participants: [],
       groups: [],
       ballotResults: null,
-      isAdmin: false,
+      ballotSessions: [],
+      currentSessionId: null,
       currentUser: null,
+      admins: [],
+      auth: {
+        isAuthenticated: false,
+        currentAdmin: null,
+      },
     };
     this.saveData();
   }

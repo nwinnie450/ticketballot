@@ -27,9 +27,9 @@ export function GroupFormationPage({ onNavigate }: GroupFormationPageProps) {
     g.members.some(m => m.toLowerCase() === currentUser?.toLowerCase())
   );
 
-  // Redirect non-participants
+  // Redirect non-representatives
   useEffect(() => {
-    if (userRole !== 'participant' && userRole !== 'admin') {
+    if (userRole !== 'representative' && userRole !== 'admin') {
       onNavigate('landing');
     }
   }, [userRole, onNavigate]);
@@ -101,6 +101,23 @@ export function GroupFormationPage({ onNavigate }: GroupFormationPageProps) {
           </p>
           <button onClick={() => onNavigate('landing')} className="btn-primary">
             Register Now
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (userRole === 'user') {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+        <div className="card max-w-md text-center">
+          <div className="text-4xl mb-4">👤</div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Representative Access Required</h2>
+          <p className="text-gray-600 mb-6">
+            Only designated representatives can create groups. Please contact an administrator to be designated as a representative.
+          </p>
+          <button onClick={() => onNavigate('status')} className="btn-primary">
+            View My Status
           </button>
         </div>
       </div>

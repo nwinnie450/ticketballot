@@ -18,9 +18,9 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
     try {
       await registerParticipant(email.trim());
       setEmail('');
-      // Auto-navigate to next step
+      // Auto-navigate to status page after registration
       setTimeout(() => {
-        onNavigate('group-formation');
+        onNavigate('status');
       }, 1500);
     } catch (err) {
       // Error is handled by the context

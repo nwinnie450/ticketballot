@@ -23,6 +23,11 @@ interface BallotContextType {
   runBallot: () => Promise<void>;
   setCurrentUser: (email: string | null) => void;
   setAdmin: (isAdmin: boolean) => void;
+  
+  // Role management
+  designateRepresentative: (email: string) => Promise<void>;
+  removeRepresentativeRole: (email: string) => Promise<void>;
+  
   refresh: () => void;
   clearError: () => void;
 }
@@ -42,7 +47,10 @@ export function BallotProvider({ children }: { children: ReactNode }) {
 
   const getUserRole = (): UserRole => {
     if (isAdmin) return 'admin';
-    if (currentUser && ballotService.isParticipantRegistered(currentUser)) return 'participant';
+    if (currentUser && ballotService.isParticipantRegistered(currentUser)) {
+      const role = ballotService.getParticipantRole(currentUser);
+      return role === 'representative' ? 'representative' : 'user';
+    }
     return 'guest';
   };
 
@@ -124,6 +132,23 @@ export function BallotProvider({ children }: { children: ReactNode }) {
     refresh();
   };
 
+  const designateRepresentative = async (email: string) => {
+    await handleAsync(() => {
+      const currentAdmin = 'admin'; // For now, use default admin name
+      if (!ballotService.designateRepresentative(email, currentAdmin)) {
+        throw new Error('Failed to designate representative');
+      }
+    });
+  };
+
+  const removeRepresentativeRole = async (email: string) => {
+    await handleAsync(() => {
+      if (!ballotService.removeRepresentativeRole(email)) {
+        throw new Error('Failed to remove representative role');
+      }
+    });
+  };
+
   const clearError = () => setError(null);
 
   const value: BallotContextType = {
@@ -143,6 +168,8 @@ export function BallotProvider({ children }: { children: ReactNode }) {
     runBallot,
     setCurrentUser,
     setAdmin,
+    designateRepresentative,
+    removeRepresentativeRole,
     refresh,
     clearError,
   };
