@@ -154,8 +154,11 @@ export function ResultsPage({ onNavigate }: ResultsPageProps) {
 
         {/* Results List */}
         <div className="card">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">Allocation Order</h2>
+          <div className="mb-4">
+            <h2 className="text-xl md:text-2xl font-bold text-gray-900">Allocation Order</h2>
+          </div>
+          
+          <div className="mb-6">
             <button 
               onClick={() => {
                 const csvContent = ballotResults.entries.map(entry => {
@@ -225,8 +228,12 @@ export function ResultsPage({ onNavigate }: ResultsPageProps) {
 
         {/* Detailed Participant List Ordered by Position */}
         <div className="card">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">🎯 Complete Allocation List</h2>
+          <div className="mb-4">
+            <h2 className="text-xl md:text-2xl font-bold text-gray-900">🎯 Complete Allocation List</h2>
+            <span className="text-sm text-gray-500">All participants in draw order</span>
+          </div>
+          
+          <div className="mb-6">
             <button
               onClick={() => {
                 // Create detailed allocation data for Excel

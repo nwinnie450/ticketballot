@@ -25,6 +25,7 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
   } = useBallot();
 
   const [newParticipantEmail, setNewParticipantEmail] = useState('');
+  const [newParticipantWechatId, setNewParticipantWechatId] = useState('');
   const [activeTab, setActiveTab] = useState<'overview' | 'participants' | 'groups' | 'ballot'>('overview');
 
   const handleAddParticipant = async (e: React.FormEvent) => {
@@ -34,6 +35,7 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
     try {
       await registerParticipant(newParticipantEmail.trim(), 'admin');
       setNewParticipantEmail('');
+      setNewParticipantWechatId('');
     } catch (err) {
       // Error handled by context
     }
@@ -254,18 +256,38 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
               </div>
               
               <div className="mb-6">
-                <form onSubmit={handleAddParticipant} className="flex flex-col sm:flex-row gap-2">
-                  <input
-                    type="email"
-                    value={newParticipantEmail}
-                    onChange={(e) => setNewParticipantEmail(e.target.value)}
-                    className="flex-1 input-field"
-                    placeholder="Enter participant email address..."
-                    required
-                  />
-                  <button type="submit" disabled={loading} className="btn-primary sm:w-auto">
-                    Add Participant
-                  </button>
+                <form onSubmit={handleAddParticipant} className="space-y-3">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div className="md:col-span-2">
+                      <input
+                        type="email"
+                        value={newParticipantEmail}
+                        onChange={(e) => setNewParticipantEmail(e.target.value)}
+                        className="w-full input-field"
+                        placeholder="Enter participant email address..."
+                        required
+                      />
+                    </div>
+                    <div>
+                      <input
+                        type="text"
+                        value={newParticipantWechatId}
+                        onChange={(e) => setNewParticipantWechatId(e.target.value)}
+                        className="w-full input-field"
+                        placeholder="WeChat ID (optional)"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <button type="submit" disabled={loading} className="btn-primary w-full sm:w-auto">
+                      Add Participant
+                    </button>
+                    {newParticipantWechatId && (
+                      <span className="ml-3 text-sm text-gray-500">
+                        Will add: {newParticipantEmail} (WeChat: {newParticipantWechatId})
+                      </span>
+                    )}
+                  </div>
                 </form>
               </div>
 
