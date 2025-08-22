@@ -250,19 +250,22 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
 
           {activeTab === 'participants' && (
             <div className="card">
-              <div className="flex items-center justify-between mb-6">
+              <div className="mb-4">
                 <h3 className="text-lg font-semibold text-gray-900">Participants ({participants.length})</h3>
-                <form onSubmit={handleAddParticipant} className="flex gap-2">
+              </div>
+              
+              <div className="mb-6">
+                <form onSubmit={handleAddParticipant} className="flex flex-col sm:flex-row gap-2">
                   <input
                     type="email"
                     value={newParticipantEmail}
                     onChange={(e) => setNewParticipantEmail(e.target.value)}
-                    className="input-field"
-                    placeholder="Add participant..."
+                    className="flex-1 input-field"
+                    placeholder="Enter participant email address..."
                     required
                   />
-                  <button type="submit" disabled={loading} className="btn-primary">
-                    Add
+                  <button type="submit" disabled={loading} className="btn-primary sm:w-auto">
+                    Add Participant
                   </button>
                 </form>
               </div>
