@@ -16,7 +16,7 @@ interface BallotContextType {
   error: string | null;
 
   // Actions
-  registerParticipant: (email: string, addedBy?: 'self' | 'admin') => Promise<void>;
+  registerParticipant: (email: string, wechatId: string, addedBy?: 'self' | 'admin') => Promise<void>;
   createGroup: (representative: string, members: string[], name?: string) => Promise<void>;
   updateGroupStatus: (groupId: string, status: Group['status']) => Promise<void>;
   removeGroup: (groupId: string) => Promise<void>;
@@ -88,9 +88,9 @@ export function BallotProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const registerParticipant = async (email: string, addedBy: 'self' | 'admin' = 'self') => {
+  const registerParticipant = async (email: string, wechatId: string, addedBy: 'self' | 'admin' = 'self') => {
     await handleAsync(() => {
-      ballotService.registerParticipant(email, addedBy);
+      ballotService.registerParticipant(email, wechatId, addedBy);
     });
   };
 

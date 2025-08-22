@@ -30,10 +30,10 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
 
   const handleAddParticipant = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newParticipantEmail.trim()) return;
+    if (!newParticipantEmail.trim() || !newParticipantWechatId.trim()) return;
 
     try {
-      await registerParticipant(newParticipantEmail.trim(), 'admin');
+      await registerParticipant(newParticipantEmail.trim(), newParticipantWechatId.trim(), 'admin');
       setNewParticipantEmail('');
       setNewParticipantWechatId('');
     } catch (err) {
@@ -87,8 +87,7 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
               View Results
             </button>
           </div>
-        </div>
-
+          
           {/* Error Display */}
           {error && (
             <div className="mt-4 p-4 bg-error-50 border border-error-200 rounded-lg">
@@ -213,18 +212,26 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
                     <label className="block text-sm font-medium text-gray-700">
                       Add Participant by Email
                     </label>
-                    <div className="mt-1 flex gap-2">
+                    <div className="mt-1 space-y-2">
                       <input
                         type="email"
                         value={newParticipantEmail}
                         onChange={(e) => setNewParticipantEmail(e.target.value)}
-                        className="flex-1 input-field"
+                        className="w-full input-field"
                         placeholder="participant@email.com"
+                        required
+                      />
+                      <input
+                        type="text"
+                        value={newParticipantWechatId}
+                        onChange={(e) => setNewParticipantWechatId(e.target.value)}
+                        className="w-full input-field"
+                        placeholder="WeChat ID"
                         required
                       />
                       <button
                         type="submit"
-                        disabled={loading || !newParticipantEmail.trim()}
+                        disabled={loading || !newParticipantEmail.trim() || !newParticipantWechatId.trim()}
                         className="btn-primary"
                       >
                         Add
@@ -256,37 +263,39 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
               </div>
               
               <div className="mb-6">
-                <form onSubmit={handleAddParticipant} className="space-y-3">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    <div className="md:col-span-2">
+                <form onSubmit={handleAddParticipant} className="space-y-4">
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Email Address
+                      </label>
                       <input
                         type="email"
                         value={newParticipantEmail}
                         onChange={(e) => setNewParticipantEmail(e.target.value)}
                         className="w-full input-field"
-                        placeholder="Enter participant email address..."
+                        placeholder="participant@email.com"
                         required
                       />
                     </div>
                     <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        WeChat ID
+                      </label>
                       <input
                         type="text"
                         value={newParticipantWechatId}
                         onChange={(e) => setNewParticipantWechatId(e.target.value)}
                         className="w-full input-field"
-                        placeholder="WeChat ID (optional)"
+                        placeholder="Enter WeChat ID for identification"
+                        required
                       />
                     </div>
                   </div>
                   <div>
-                    <button type="submit" disabled={loading} className="btn-primary w-full sm:w-auto">
+                    <button type="submit" disabled={loading} className="btn-primary">
                       Add Participant
                     </button>
-                    {newParticipantWechatId && (
-                      <span className="ml-3 text-sm text-gray-500">
-                        Will add: {newParticipantEmail} (WeChat: {newParticipantWechatId})
-                      </span>
-                    )}
                   </div>
                 </form>
               </div>
@@ -297,6 +306,9 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
                     <tr>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Email
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        WeChat ID
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Role
@@ -326,6 +338,9 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
                         <tr key={index}>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                             {participant.email}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {participant.wechatId || '-'}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${

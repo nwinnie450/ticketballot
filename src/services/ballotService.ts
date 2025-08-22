@@ -32,6 +32,7 @@ class BallotService {
           participants: parsed.participants?.map((p: any) => ({
             ...p,
             registeredAt: new Date(p.registeredAt),
+            wechatId: p.wechatId || '', // Handle backward compatibility
           })) || [],
           groups: parsed.groups?.map((g: any) => ({
             ...g,
@@ -62,13 +63,22 @@ class BallotService {
   }
 
   // Participant management
-  registerParticipant(email: string, addedBy: 'self' | 'admin' = 'self', sessionId?: string): boolean {
+  registerParticipant(email: string, wechatId: string, addedBy: 'self' | 'admin' = 'self', sessionId?: string): boolean {
     if (!this.isValidEmail(email)) {
       throw new Error('Invalid email address');
     }
 
+    if (!wechatId || !wechatId.trim()) {
+      throw new Error('WeChat ID is required');
+    }
+
     if (this.isParticipantRegistered(email)) {
       throw new Error('Email already registered');
+    }
+
+    // Check if WeChat ID is already registered
+    if (this.isWechatIdRegistered(wechatId.trim())) {
+      throw new Error('WeChat ID already registered');
     }
 
     // Use current session or create default session
@@ -76,6 +86,7 @@ class BallotService {
 
     this.data.participants.push({
       email: email.toLowerCase(),
+      wechatId: wechatId.trim(),
       registeredAt: new Date(),
       addedBy,
       role: 'user', // Default role is user
@@ -88,6 +99,10 @@ class BallotService {
 
   isParticipantRegistered(email: string): boolean {
     return this.data.participants.some(p => p.email.toLowerCase() === email.toLowerCase());
+  }
+
+  isWechatIdRegistered(wechatId: string): boolean {
+    return this.data.participants.some(p => p.wechatId.toLowerCase() === wechatId.toLowerCase());
   }
 
   getParticipants(sessionId?: string): Participant[] {

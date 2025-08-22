@@ -41,6 +41,7 @@ export function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps) {
 
   // User management form
   const [newUserEmail, setNewUserEmail] = useState('');
+  const [newUserWechatId, setNewUserWechatId] = useState('');
   
   // Group creation form (separate from adding users)
   const [selectedUsersForGroup, setSelectedUsersForGroup] = useState<string[]>([]);
@@ -155,11 +156,12 @@ export function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps) {
     setLoading(true);
 
     try {
-      await registerParticipant(newUserEmail, 'admin');
+      await registerParticipant(newUserEmail, newUserWechatId, 'admin');
       setSuccess(`User '${newUserEmail}' added successfully`);
       
       // Reset form
       setNewUserEmail('');
+      setNewUserWechatId('');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to add user');
     } finally {
@@ -668,9 +670,29 @@ export function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps) {
                     </p>
                   </div>
 
+                  <div>
+                    <label htmlFor="newUserWechatId" className="block text-sm font-medium text-gray-700 mb-1">
+                      WeChat ID
+                    </label>
+                    <input
+                      type="text"
+                      id="newUserWechatId"
+                      value={newUserWechatId}
+                      onChange={(e) => setNewUserWechatId(e.target.value)}
+                      className="input-field"
+                      placeholder="Enter WeChat ID"
+                      required
+                      disabled={loading || ballotLoading}
+                      autoComplete="off"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      WeChat ID is required for participant identification.
+                    </p>
+                  </div>
+
                   <button
                     type="submit"
-                    disabled={loading || ballotLoading || !newUserEmail.trim()}
+                    disabled={loading || ballotLoading || !newUserEmail.trim() || !newUserWechatId.trim()}
                     className="btn-primary w-full"
                   >
                     {loading || ballotLoading ? 'Adding...' : 'Add User'}
@@ -833,6 +855,9 @@ export function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps) {
                           Email
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          WeChat ID
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Role
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -857,6 +882,9 @@ export function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps) {
                           <tr key={index}>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                               {participant.email}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              {participant.wechatId || '-'}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                               <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${

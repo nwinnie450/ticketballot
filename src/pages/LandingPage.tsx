@@ -8,16 +8,18 @@ interface LandingPageProps {
 export function LandingPage({ onNavigate }: LandingPageProps) {
   const { registerParticipant, userRole, stats, loading, error, clearError } = useBallot();
   const [email, setEmail] = useState('');
+  const [wechatId, setWechatId] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim()) return;
+    if (!email.trim() || !wechatId.trim()) return;
 
     setIsSubmitting(true);
     try {
-      await registerParticipant(email.trim());
+      await registerParticipant(email.trim(), wechatId.trim());
       setEmail('');
+      setWechatId('');
       // Auto-navigate to status page after registration
       setTimeout(() => {
         onNavigate('status');
@@ -130,9 +132,25 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
                             />
                           </div>
                           
+                          <div>
+                            <label htmlFor="wechatId" className="block text-sm font-medium text-gray-700">
+                              WeChat ID
+                            </label>
+                            <input
+                              type="text"
+                              id="wechatId"
+                              value={wechatId}
+                              onChange={(e) => setWechatId(e.target.value)}
+                              className="mt-1 input-field"
+                              placeholder="Enter your WeChat ID"
+                              required
+                              disabled={isSubmitting || loading}
+                            />
+                          </div>
+                          
                           <button
                             type="submit"
-                            disabled={isSubmitting || loading || !email.trim()}
+                            disabled={isSubmitting || loading || !email.trim() || !wechatId.trim()}
                             className="w-full btn-primary"
                           >
                             {isSubmitting ? (

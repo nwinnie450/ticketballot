@@ -1,5 +1,6 @@
 export interface Participant {
   email: string;
+  wechatId: string; // WeChat ID for participant identification
   registeredAt: Date;
   addedBy: 'self' | 'admin';
   role: 'user' | 'representative'; // New role field
