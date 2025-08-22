@@ -61,32 +61,31 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto py-4 md:py-8 px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-              <p className="text-gray-600 mt-1">Manage participants, groups, and ballot process</p>
-            </div>
-            
-            <div className="flex items-center space-x-3">
-              {!ballotResults && approvedGroups.length > 0 && (
-                <button
-                  onClick={handleStartBallot}
-                  disabled={loading}
-                  className="bg-primary-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-primary-700 disabled:opacity-50"
-                >
-                  🚀 Start Ballot Session
-                </button>
-              )}
-              <button
-                onClick={() => onNavigate('results')}
-                className="btn-secondary"
-                disabled={!ballotResults}
-              >
-                View Results
-              </button>
-            </div>
+        <div className="mb-6">
+          <div className="mb-4">
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Admin Dashboard</h1>
+            <p className="text-gray-600 mt-1">Manage participants, groups, and ballot process</p>
           </div>
+          
+          <div className="flex flex-col sm:flex-row gap-3">
+            {!ballotResults && approvedGroups.length > 0 && (
+              <button
+                onClick={handleStartBallot}
+                disabled={loading}
+                className="bg-primary-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-primary-700 disabled:opacity-50"
+              >
+                🚀 Start Ballot Session
+              </button>
+            )}
+            <button
+              onClick={() => onNavigate('results')}
+              className="btn-secondary"
+              disabled={!ballotResults}
+            >
+              View Results
+            </button>
+          </div>
+        </div>
 
           {/* Error Display */}
           {error && (
