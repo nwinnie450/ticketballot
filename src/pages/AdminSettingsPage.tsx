@@ -264,7 +264,7 @@ export function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps) {
       const groupMembers = selectedUsersForGroup.filter(email => email !== selectedRepresentative);
       await createGroup(selectedRepresentative, groupMembers, newGroupName.trim() || undefined);
       
-      setSuccess(`Group "${newGroupName.trim() || 'with auto-generated Kelly Yu song name'}" created successfully with ${selectedUsersForGroup.length} members`);
+      setSuccess(`Group "${newGroupName.trim() || 'with Kelly song name'}" created successfully with ${selectedUsersForGroup.length} members`);
       
       // Reset form
       setSelectedUsersForGroup([]);
@@ -693,7 +693,7 @@ export function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps) {
                       value={newGroupName}
                       onChange={(e) => setNewGroupName(e.target.value)}
                       className="input-field"
-                      placeholder="e.g., 心動組, 小幸運組 (leave blank for auto Kelly Yu song name)"
+                      placeholder="Leave blank for Kelly song title"
                       disabled={loading || ballotLoading}
                     />
                   </div>
