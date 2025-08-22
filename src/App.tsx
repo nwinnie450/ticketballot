@@ -56,7 +56,7 @@ function AppContent() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 overflow-x-hidden">
       <Header onNavigate={handleNavigate} currentPage={currentPage} />
       {renderPage()}
       <DemoButton />

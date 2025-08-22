@@ -295,49 +295,11 @@ export function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps) {
     <div className="min-h-screen bg-gray-50 py-8 px-4">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Admin Settings</h1>
-            <p className="text-gray-600 mt-1">
-              Manage your admin account and system settings
-            </p>
-          </div>
-          <div className="flex items-center space-x-3">
-            <button
-              onClick={() => {
-                refresh();
-                loadData();
-                
-                // Debug: Show localStorage data
-                const storageData = localStorage.getItem('ticket-ballot-data');
-                if (storageData) {
-                  const data = JSON.parse(storageData);
-                  console.log('Storage Debug:', {
-                    participants: data.participants?.length || 0,
-                    groups: data.groups?.length || 0,
-                    currentSessionId: data.currentSessionId,
-                    sessions: data.ballotSessions?.length || 0
-                  });
-                  setSuccess(`Refreshed! Storage: ${data.participants?.length || 0} participants, ${data.groups?.length || 0} groups`);
-                } else {
-                  setSuccess('Data refreshed successfully');
-                }
-                
-                setTimeout(() => setSuccess(''), 3000);
-              }}
-              disabled={loading || ballotLoading}
-              className="btn-secondary flex items-center space-x-2"
-            >
-              <span>🔄</span>
-              <span>{loading || ballotLoading ? 'Refreshing...' : 'Refresh'}</span>
-            </button>
-            <button
-              onClick={() => onNavigate('admin-dashboard')}
-              className="btn-secondary"
-            >
-              ← Back to Dashboard
-            </button>
-          </div>
+        <div className="mb-6">
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Admin Settings</h1>
+          <p className="text-gray-600 mt-1">
+            Manage your admin account and system settings
+          </p>
         </div>
 
         {/* Messages */}
@@ -391,9 +353,50 @@ export function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps) {
           </div>
         )}
 
+        {/* Action Buttons */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <button
+              onClick={() => {
+                refresh();
+                loadData();
+                
+                // Debug: Show localStorage data
+                const storageData = localStorage.getItem('ticket-ballot-data');
+                if (storageData) {
+                  const data = JSON.parse(storageData);
+                  console.log('Storage Debug:', {
+                    participants: data.participants?.length || 0,
+                    groups: data.groups?.length || 0,
+                    currentSessionId: data.currentSessionId,
+                    sessions: data.ballotSessions?.length || 0
+                  });
+                  setSuccess(`Refreshed! Storage: ${data.participants?.length || 0} participants, ${data.groups?.length || 0} groups`);
+                } else {
+                  setSuccess('Data refreshed successfully');
+                }
+                
+                setTimeout(() => setSuccess(''), 3000);
+              }}
+              disabled={loading || ballotLoading}
+              className="btn-secondary flex items-center justify-center space-x-2"
+            >
+              <span>🔄</span>
+              <span>{loading || ballotLoading ? 'Refreshing...' : 'Refresh Data'}</span>
+            </button>
+            <button
+              onClick={() => onNavigate('admin-dashboard')}
+              className="btn-secondary"
+            >
+              ← Back to Dashboard
+            </button>
+          </div>
+        </div>
+
         {/* Navigation Tabs */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-8">
-          <nav className="flex space-x-8 px-6" aria-label="Tabs">
+          {/* Desktop Tabs */}
+          <nav className="hidden md:flex space-x-8 px-6" aria-label="Tabs">
             {[
               { id: 'password', name: 'Change Password', icon: '🔒' },
               { id: 'admins', name: 'Manage Admins', icon: '👥' },
@@ -411,6 +414,29 @@ export function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps) {
               >
                 <span>{tab.icon}</span>
                 <span>{tab.name}</span>
+              </button>
+            ))}
+          </nav>
+          
+          {/* Mobile Tabs - Grid Layout */}
+          <nav className="md:hidden grid grid-cols-2 gap-1 p-3" aria-label="Mobile Tabs">
+            {[
+              { id: 'password', name: 'Password', icon: '🔒' },
+              { id: 'admins', name: 'Admins', icon: '👥' },
+              { id: 'users', name: 'Users', icon: '👤' },
+              { id: 'system', name: 'System', icon: '⚙️' },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as any)}
+                className={`py-3 px-3 rounded-lg font-medium text-sm flex flex-col items-center space-y-1 transition-colors ${
+                  activeTab === tab.id
+                    ? 'bg-primary-100 text-primary-700 border border-primary-200'
+                    : 'text-gray-600 hover:bg-gray-50 border border-transparent'
+                }`}
+              >
+                <span className="text-lg">{tab.icon}</span>
+                <span className="text-xs">{tab.name}</span>
               </button>
             ))}
           </nav>
@@ -541,7 +567,7 @@ export function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps) {
               <div className="card">
                 <h3 className="text-lg font-semibold text-gray-900 mb-6">Existing Admins</h3>
                 
-                <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 rounded-lg">
+                <div className="overflow-x-auto shadow ring-1 ring-black ring-opacity-5 rounded-lg">
                   <table className="min-w-full divide-y divide-gray-300">
                     <thead className="bg-gray-50">
                       <tr>
@@ -799,7 +825,7 @@ export function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps) {
               <div className="card">
                 <h3 className="text-lg font-semibold text-gray-900 mb-6">User Management ({participants.length})</h3>
                 
-                <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 rounded-lg">
+                <div className="overflow-x-auto shadow ring-1 ring-black ring-opacity-5 rounded-lg">
                   <table className="min-w-full divide-y divide-gray-300">
                     <thead className="bg-gray-50">
                       <tr>

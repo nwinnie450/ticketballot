@@ -59,7 +59,7 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto py-4 md:py-8 px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between">
@@ -121,7 +121,8 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
 
         {/* Navigation Tabs */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-8">
-          <nav className="flex space-x-8 px-6" aria-label="Tabs">
+          {/* Desktop Tabs */}
+          <nav className="hidden md:flex space-x-8 px-6" aria-label="Tabs">
             {[
               { id: 'overview', name: 'Overview', icon: '📊' },
               { id: 'participants', name: 'Participants', icon: '👥' },
@@ -139,6 +140,29 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
               >
                 <span>{tab.icon}</span>
                 <span>{tab.name}</span>
+              </button>
+            ))}
+          </nav>
+          
+          {/* Mobile Tabs - Grid Layout */}
+          <nav className="md:hidden grid grid-cols-2 gap-1 p-3" aria-label="Mobile Tabs">
+            {[
+              { id: 'overview', name: 'Overview', icon: '📊' },
+              { id: 'participants', name: 'Participants', icon: '👥' },
+              { id: 'groups', name: 'Groups', icon: '🏷️' },
+              { id: 'ballot', name: 'Ballot', icon: '🎯' },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as any)}
+                className={`py-3 px-3 rounded-lg font-medium text-sm flex flex-col items-center space-y-1 transition-colors ${
+                  activeTab === tab.id
+                    ? 'bg-primary-100 text-primary-700 border border-primary-200'
+                    : 'text-gray-600 hover:bg-gray-50 border border-transparent'
+                }`}
+              >
+                <span className="text-lg">{tab.icon}</span>
+                <span className="text-xs">{tab.name}</span>
               </button>
             ))}
           </nav>
