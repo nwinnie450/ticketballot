@@ -140,15 +140,7 @@ export function Header({ onNavigate, currentPage }: HeaderProps) {
               >
                 {currentPage.startsWith('admin-') ? '🚪 Logout' : '⚙️ Dashboard'}
               </button>
-            ) : (
-              <button
-                onClick={() => onNavigate('user-auth')}
-                className="text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 rounded-full transition-colors"
-                title="Switch User / Login"
-              >
-                🔄 Switch
-              </button>
-            )}
+            ) : null}
             
             {/* Show current superadmin name if logged in */}
             {isAdminAuthenticated && currentAdmin && (
