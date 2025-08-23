@@ -9,6 +9,7 @@ import { AdminDashboard } from './pages/AdminDashboard';
 import { AdminLoginPage } from './pages/AdminLoginPage';
 import { AdminSettingsPage } from './pages/AdminSettingsPage';
 import { LoginPage } from './pages/LoginPage';
+import { UserAuthPage } from './pages/UserAuthPage';
 import { DemoButton } from './components/ui/DemoButton';
 import type { PageType } from './types';
 
@@ -44,6 +45,8 @@ function AppContent() {
         return <ResultsPage onNavigate={handleNavigate} />;
       case 'login':
         return <LoginPage onNavigate={handleNavigate} />;
+      case 'user-auth':
+        return <UserAuthPage onNavigate={handleNavigate} />;
       case 'admin-login':
         return <AdminLoginPage onNavigate={handleNavigate} onLoginSuccess={() => {}} />;
       case 'admin-dashboard':

@@ -33,11 +33,14 @@ export function AdminLoginPage({ onNavigate, onLoginSuccess }: AdminLoginPagePro
       <div className="max-w-md w-full">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="text-4xl mb-4">🔐</div>
-          <h1 className="text-3xl font-bold text-gray-900">Admin Login</h1>
+          <div className="text-4xl mb-4">⚙️</div>
+          <h1 className="text-3xl font-bold text-gray-900">Administrator Login</h1>
           <p className="text-gray-600 mt-2">
-            Access the ballot administration panel
+            Secure access to ballot administration panel
           </p>
+          <div className="inline-flex items-center px-3 py-1 mt-3 text-xs font-medium text-red-700 bg-red-100 border border-red-200 rounded-full">
+            🔒 Admin Access Only
+          </div>
         </div>
 
         {/* Login Form */}
@@ -105,13 +108,23 @@ export function AdminLoginPage({ onNavigate, onLoginSuccess }: AdminLoginPagePro
             </button>
           </form>
 
-          <div className="mt-6 text-center">
+          <div className="mt-6 text-center space-y-2">
             <button
               onClick={() => onNavigate('landing')}
               className="text-primary-600 hover:text-primary-700 text-sm font-medium"
             >
               ← Back to Public Site
             </button>
+            
+            <div className="text-xs text-gray-400">
+              Regular user?{' '}
+              <button 
+                onClick={() => onNavigate('user-auth')} 
+                className="text-blue-600 hover:text-blue-700 underline"
+              >
+                User Registration/Login
+              </button>
+            </div>
           </div>
         </div>
 

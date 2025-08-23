@@ -14,10 +14,13 @@ interface BallotContextType {
   stats: ReturnType<typeof ballotService.getStats>;
   loading: boolean;
   error: string | null;
+  availableParticipants: Participant[];
+  joinableGroups: Group[];
 
   // Actions
   registerParticipant: (email: string, wechatId: string, addedBy?: 'self' | 'admin') => Promise<void>;
   createGroup: (representative: string, members: string[], name?: string) => Promise<void>;
+  joinGroup: (groupId: string, userEmail: string) => Promise<void>;
   updateGroupStatus: (groupId: string, status: Group['status']) => Promise<void>;
   removeGroup: (groupId: string) => Promise<void>;
   removeParticipant: (email: string) => Promise<void>;
@@ -52,6 +55,8 @@ export function BallotProvider({ children }: { children: ReactNode }) {
 
   const isAdmin = authService.isAuthenticated();
   const stats = ballotService.getStats();
+  const availableParticipants = ballotService.getAvailableParticipants();
+  const joinableGroups = ballotService.getJoinableGroups();
 
   const getUserRole = (): UserRole => {
     if (isAdmin) return 'admin';
@@ -97,6 +102,12 @@ export function BallotProvider({ children }: { children: ReactNode }) {
   const createGroup = async (representative: string, members: string[], name?: string) => {
     await handleAsync(() => {
       ballotService.createGroup(representative, members, name);
+    });
+  };
+
+  const joinGroup = async (groupId: string, userEmail: string) => {
+    await handleAsync(() => {
+      ballotService.joinGroup(groupId, userEmail);
     });
   };
 
@@ -196,8 +207,11 @@ export function BallotProvider({ children }: { children: ReactNode }) {
     stats,
     loading,
     error,
+    availableParticipants,
+    joinableGroups,
     registerParticipant,
     createGroup,
+    joinGroup,
     updateGroupStatus,
     removeGroup,
     removeParticipant,

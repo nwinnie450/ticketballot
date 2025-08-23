@@ -89,7 +89,7 @@ class BallotService {
       wechatId: wechatId.trim(),
       registeredAt: new Date(),
       addedBy,
-      role: 'user', // Default role is user
+      role: addedBy === 'self' ? 'representative' : 'user', // Self-registered users become representatives
       sessionId: currentSessionId,
     });
     
@@ -202,10 +202,10 @@ class BallotService {
       throw new Error('Representative must be registered');
     }
 
-    // Check if representative has the right role
+    // Check if representative has the right role (allow both user and representative)
     const repRole = this.getParticipantRole(representative);
-    if (repRole !== 'representative') {
-      throw new Error('Only designated representatives can create groups');
+    if (repRole !== 'representative' && repRole !== 'user') {
+      throw new Error('Only registered participants can create groups');
     }
 
     // Validate all members are registered
@@ -319,6 +319,80 @@ class BallotService {
     if (index === -1) return false;
 
     this.data.groups.splice(index, 1);
+    this.saveData();
+    return true;
+  }
+
+  // Get available participants for group formation (not already in groups)
+  getAvailableParticipants(sessionId?: string): Participant[] {
+    const currentSessionId = sessionId || this.data.currentSessionId;
+    if (!currentSessionId) return [];
+    
+    const sessionParticipants = this.data.participants.filter(p => p.sessionId === currentSessionId);
+    const groupMembersAndReps = new Set<string>();
+    
+    // Collect all users already in groups
+    this.data.groups
+      .filter(g => g.sessionId === currentSessionId)
+      .forEach(group => {
+        groupMembersAndReps.add(group.representative.toLowerCase());
+        group.members.forEach(member => groupMembersAndReps.add(member.toLowerCase()));
+      });
+    
+    // Return participants not in any group
+    return sessionParticipants.filter(p => !groupMembersAndReps.has(p.email.toLowerCase()));
+  }
+
+  // Get joinable groups (groups that have space for more members)
+  getJoinableGroups(sessionId?: string): Group[] {
+    const currentSessionId = sessionId || this.data.currentSessionId;
+    if (!currentSessionId) return [];
+    
+    return this.data.groups
+      .filter(g => 
+        g.sessionId === currentSessionId && 
+        g.status === 'pending' && // Only pending groups can be joined
+        g.members.length < 3 // Groups can have max 3 members total
+      )
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()); // Most recent first
+  }
+
+  // Join an existing group
+  joinGroup(groupId: string, userEmail: string): boolean {
+    const group = this.data.groups.find(g => g.id === groupId);
+    if (!group) {
+      throw new Error('Group not found');
+    }
+
+    if (group.status !== 'pending') {
+      throw new Error('Cannot join group. Group status is not pending.');
+    }
+
+    if (group.members.length >= 3) {
+      throw new Error('Group is already full (maximum 3 members)');
+    }
+
+    // Check if user is already in this group
+    if (group.representative.toLowerCase() === userEmail.toLowerCase() ||
+        group.members.some(m => m.toLowerCase() === userEmail.toLowerCase())) {
+      throw new Error('You are already in this group');
+    }
+
+    // Check if user is already in another group
+    const currentSessionId = this.data.currentSessionId;
+    const existingGroup = this.data.groups.find(g => 
+      g.sessionId === currentSessionId && (
+        g.representative.toLowerCase() === userEmail.toLowerCase() ||
+        g.members.some(m => m.toLowerCase() === userEmail.toLowerCase())
+      )
+    );
+
+    if (existingGroup) {
+      throw new Error('You are already in another group');
+    }
+
+    // Add user to group
+    group.members.push(userEmail.toLowerCase());
     this.saveData();
     return true;
   }

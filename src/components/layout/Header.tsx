@@ -14,6 +14,23 @@ export function Header({ onNavigate, currentPage }: HeaderProps) {
   const isAdminAuthenticated = authService.isAuthenticated();
   const currentAdmin = authService.getCurrentAdmin();
 
+  const handleHomeClick = () => {
+    // If admin is authenticated, go to admin dashboard
+    if (isAdminAuthenticated) {
+      onNavigate('admin-dashboard');
+      return;
+    }
+    
+    // If user is logged in, go to status page  
+    if (userRole === 'user' || userRole === 'representative') {
+      onNavigate('status');
+      return;
+    }
+    
+    // Guests go to landing page to register/login
+    onNavigate('landing');
+  };
+
   const handleAdminAction = () => {
     if (isAdminAuthenticated) {
       // If admin is logged in, show logout option or go to dashboard
@@ -33,14 +50,14 @@ export function Header({ onNavigate, currentPage }: HeaderProps) {
     { id: 'landing', label: 'Home', roles: ['guest', 'user', 'representative', 'admin'] },
     // Only show Register for guests (not logged in users)
     { id: 'registration', label: 'Register', roles: ['guest'] },
-    { id: 'group-formation', label: 'Create Group', roles: ['representative'] },
+    { id: 'group-formation', label: 'Create Group', roles: ['user', 'representative'] },
     { id: 'status', label: 'My Status', roles: ['user', 'representative'] },
     { id: 'results', label: 'Results', roles: ['guest', 'user', 'representative', 'admin'] },
   ];
 
   // Add login option for guests
   const loginItems = !currentUser && !isAdminAuthenticated ? [
-    { id: 'login', label: '🔐 Login', roles: ['guest'] },
+    { id: 'user-auth', label: '🔐 Register/Login', roles: ['guest'] },
   ] : [];
 
   // Add admin navigation items if authenticated
@@ -61,7 +78,7 @@ export function Header({ onNavigate, currentPage }: HeaderProps) {
           {/* Logo */}
           <div className="flex items-center">
             <button
-              onClick={() => onNavigate('landing')}
+              onClick={handleHomeClick}
               className="flex items-center space-x-2 text-xl font-bold text-primary-600 hover:text-primary-700"
             >
               <span className="text-2xl">🎫</span>
@@ -109,11 +126,11 @@ export function Header({ onNavigate, currentPage }: HeaderProps) {
             {/* Login/Admin Button */}
             {!currentUser && !isAdminAuthenticated ? (
               <button
-                onClick={() => onNavigate('login')}
+                onClick={() => onNavigate('user-auth')}
                 className="text-sm bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg transition-colors"
-                title="Login"
+                title="Register or Login"
               >
-                🔐 Login
+                🔐 Join
               </button>
             ) : isAdminAuthenticated ? (
               <button
@@ -125,9 +142,9 @@ export function Header({ onNavigate, currentPage }: HeaderProps) {
               </button>
             ) : (
               <button
-                onClick={() => onNavigate('login')}
+                onClick={() => onNavigate('user-auth')}
                 className="text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 rounded-full transition-colors"
-                title="Switch User / Superadmin Login"
+                title="Switch User / Login"
               >
                 🔄 Switch
               </button>

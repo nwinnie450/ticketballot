@@ -85,6 +85,7 @@ export type PageType =
   | 'status' 
   | 'results' 
   | 'login'
+  | 'user-auth'
   | 'admin-login'
   | 'admin-dashboard'
   | 'admin-participants'

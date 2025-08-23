@@ -1,35 +1,31 @@
-import React, { useState } from 'react';
+import { useEffect } from 'react';
 import { useBallot } from '../hooks/useBallot';
+import { authService } from '../services/authService';
 
 interface LandingPageProps {
   onNavigate: (page: string) => void;
 }
 
 export function LandingPage({ onNavigate }: LandingPageProps) {
-  const { registerParticipant, userRole, stats, loading, error, clearError } = useBallot();
-  const [email, setEmail] = useState('');
-  const [wechatId, setWechatId] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { userRole, stats } = useBallot();
+  const isAdminAuthenticated = authService.isAuthenticated();
 
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email.trim() || !wechatId.trim()) return;
-
-    setIsSubmitting(true);
-    try {
-      await registerParticipant(email.trim(), wechatId.trim());
-      setEmail('');
-      setWechatId('');
-      // Auto-navigate to status page after registration
-      setTimeout(() => {
-        onNavigate('status');
-      }, 1500);
-    } catch (err) {
-      // Error is handled by the context
-    } finally {
-      setIsSubmitting(false);
+  // Auto-redirect based on user role
+  useEffect(() => {
+    // If admin is authenticated, redirect to admin dashboard
+    if (isAdminAuthenticated) {
+      onNavigate('admin-dashboard');
+      return;
     }
-  };
+    
+    // If user is logged in (not guest), redirect to status page
+    if (userRole === 'user' || userRole === 'representative') {
+      onNavigate('status');
+      return;
+    }
+    
+    // Guests stay on landing page to register/login
+  }, [isAdminAuthenticated, userRole, onNavigate]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-50 to-blue-50">
@@ -91,92 +87,40 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
                   </div>
                 </div>
 
-                {/* Registration Form */}
+                {/* Call to Action */}
                 <div className="mt-12 lg:mt-0 lg:w-1/2 lg:pl-12">
                   <div className="card max-w-md mx-auto">
                     {userRole === 'guest' ? (
-                      <>
-                        <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">
-                          Register Your Interest
-                        </h2>
-                        
-                        {error && (
-                          <div className="mb-4 p-3 bg-error-50 border border-error-200 rounded-md">
-                            <div className="flex items-center">
-                              <span className="text-error-600 font-semibold">⚠️ Error:</span>
-                              <span className="ml-2 text-error-700">{error}</span>
-                              <button 
-                                onClick={clearError}
-                                className="ml-auto text-error-600 hover:text-error-800"
-                              >
-                                ×
-                              </button>
-                            </div>
-                          </div>
-                        )}
-
-                        <form onSubmit={handleRegister} className="space-y-4">
-                          <div>
-                            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                              Email Address
-                            </label>
-                            <input
-                              type="email"
-                              id="email"
-                              value={email}
-                              onChange={(e) => setEmail(e.target.value)}
-                              className="mt-1 input-field"
-                              placeholder="your@email.com"
-                              required
-                              disabled={isSubmitting || loading}
-                            />
-                          </div>
-                          
-                          <div>
-                            <label htmlFor="wechatId" className="block text-sm font-medium text-gray-700">
-                              WeChat ID
-                            </label>
-                            <input
-                              type="text"
-                              id="wechatId"
-                              value={wechatId}
-                              onChange={(e) => setWechatId(e.target.value)}
-                              className="mt-1 input-field"
-                              placeholder="Enter your WeChat ID"
-                              required
-                              disabled={isSubmitting || loading}
-                            />
-                          </div>
-                          
-                          <button
-                            type="submit"
-                            disabled={isSubmitting || loading || !email.trim() || !wechatId.trim()}
+                      <div className="text-center">
+                        <div className="text-4xl mb-4">🎫</div>
+                        <h2 className="text-2xl font-bold text-gray-900 mb-4">Join the Ballot</h2>
+                        <p className="text-gray-600 mb-6">
+                          Register now to participate in the fair ticket ballot system.
+                        </p>
+                        <div className="space-y-3">
+                          <button 
+                            onClick={() => onNavigate('user-auth')} 
                             className="w-full btn-primary"
                           >
-                            {isSubmitting ? (
-                              <span className="flex items-center justify-center">
-                                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                </svg>
-                                Registering...
-                              </span>
-                            ) : (
-                              'Register to Participate'
-                            )}
+                            Register / Login
                           </button>
-                        </form>
-
-                        <div className="mt-4 text-center text-sm text-gray-600">
-                          Already registered?{' '}
                           <button 
                             onClick={() => onNavigate('status')} 
-                            className="text-primary-600 hover:text-primary-700 font-medium"
+                            className="w-full btn-secondary"
                           >
-                            Check your status →
+                            Check Status
                           </button>
                         </div>
-                      </>
+                        <div className="mt-6 pt-4 border-t border-gray-200">
+                          <div className="text-xs text-gray-500 mb-2">Administrator?</div>
+                          <button 
+                            onClick={() => onNavigate('admin-login')} 
+                            className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                          >
+                            🔐 Admin Login
+                          </button>
+                        </div>
+                      </div>
                     ) : (userRole === 'user' || userRole === 'representative') ? (
                       <div className="text-center">
                         <div className="text-4xl mb-4">✅</div>
