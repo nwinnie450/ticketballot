@@ -130,13 +130,20 @@ export function AdminLoginPage({ onNavigate, onLoginSuccess }: AdminLoginPagePro
 
         {/* Default Credentials Info */}
         <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <h3 className="text-sm font-semibold text-blue-800 mb-2">🚀 First Time Setup</h3>
-          <div className="text-sm text-blue-700">
-            <p><strong>Default Login:</strong></p>
-            <p>Username: <code className="bg-blue-100 px-1 rounded">admin</code></p>
-            <p>Password: <code className="bg-blue-100 px-1 rounded">password</code></p>
+          <h3 className="text-sm font-semibold text-blue-800 mb-2">🚀 Default Login Accounts</h3>
+          <div className="text-sm text-blue-700 space-y-3">
+            <div>
+              <p><strong>Standard Admin:</strong></p>
+              <p>Username: <code className="bg-blue-100 px-1 rounded">admin</code></p>
+              <p>Password: <code className="bg-blue-100 px-1 rounded">password</code></p>
+            </div>
+            <div>
+              <p><strong>Super Admin:</strong></p>
+              <p>Username: <code className="bg-blue-100 px-1 rounded">superadmin</code></p>
+              <p>Password: <code className="bg-blue-100 px-1 rounded">MyPassword</code></p>
+            </div>
             <p className="mt-2 text-xs">
-              ⚠️ Please change the default password after first login
+              ⚠️ Please change default passwords after first login
             </p>
           </div>
         </div>

