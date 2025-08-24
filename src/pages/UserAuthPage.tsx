@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useBallot } from '../hooks/useBallot';
+import { useLanguage } from '../contexts/LanguageContext';
 import { ballotService } from '../services/ballotService';
 
 interface UserAuthPageProps {
@@ -8,6 +9,7 @@ interface UserAuthPageProps {
 
 export function UserAuthPage({ onNavigate }: UserAuthPageProps) {
   const { registerParticipant, setCurrentUser, loading, error, clearError } = useBallot();
+  const { t } = useLanguage();
   const [mode, setMode] = useState<'register' | 'login'>('register');
   const [email, setEmail] = useState('');
   const [wechatId, setWechatId] = useState('');
@@ -74,12 +76,12 @@ export function UserAuthPage({ onNavigate }: UserAuthPageProps) {
         <div className="text-center mb-8">
           <div className="text-4xl mb-4">🎫</div>
           <h1 className="text-3xl font-bold text-gray-900">
-            {mode === 'register' ? 'Join the Ballot' : 'Welcome Back'}
+            {mode === 'register' ? t('userAuth.joinBallot') : t('userAuth.welcomeBack')}
           </h1>
           <p className="text-gray-600 mt-2">
             {mode === 'register' 
-              ? 'Register to participate in the ticket ballot' 
-              : 'Login with your registered email'
+              ? t('userAuth.registerDescription') 
+              : t('userAuth.loginDescription')
             }
           </p>
         </div>
@@ -99,7 +101,7 @@ export function UserAuthPage({ onNavigate }: UserAuthPageProps) {
                 : 'text-gray-600 hover:text-gray-900'
             }`}
           >
-            Register
+            {t('userAuth.register')}
           </button>
           <button
             onClick={() => {
@@ -114,7 +116,7 @@ export function UserAuthPage({ onNavigate }: UserAuthPageProps) {
                 : 'text-gray-600 hover:text-gray-900'
             }`}
           >
-            Login
+            {t('userAuth.login')}
           </button>
         </div>
 
@@ -123,7 +125,7 @@ export function UserAuthPage({ onNavigate }: UserAuthPageProps) {
           {mode === 'register' ? (
             <>
               <h2 className="text-xl font-semibold text-gray-900 mb-6 text-center">
-                Create Your Account
+                {t('userAuth.createAccount')}
               </h2>
               
               {error && (
@@ -144,7 +146,7 @@ export function UserAuthPage({ onNavigate }: UserAuthPageProps) {
               <form onSubmit={handleRegister} className="space-y-4">
                 <div>
                   <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                    Email Address
+                    {t('userAuth.emailAddress')}
                   </label>
                   <input
                     type="email"
@@ -152,7 +154,7 @@ export function UserAuthPage({ onNavigate }: UserAuthPageProps) {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="input-field"
-                    placeholder="your@email.com"
+                    placeholder={t('userAuth.emailPlaceholder')}
                     required
                     disabled={isSubmitting || loading}
                     autoComplete="email"
@@ -161,7 +163,7 @@ export function UserAuthPage({ onNavigate }: UserAuthPageProps) {
                 
                 <div>
                   <label htmlFor="wechatId" className="block text-sm font-medium text-gray-700 mb-1">
-                    WeChat ID
+                    {t('userAuth.wechatId')}
                   </label>
                   <input
                     type="text"
@@ -169,7 +171,7 @@ export function UserAuthPage({ onNavigate }: UserAuthPageProps) {
                     value={wechatId}
                     onChange={(e) => setWechatId(e.target.value)}
                     className="input-field"
-                    placeholder="Enter your WeChat ID"
+                    placeholder={t('userAuth.wechatPlaceholder')}
                     required
                     disabled={isSubmitting || loading}
                   />
@@ -186,22 +188,22 @@ export function UserAuthPage({ onNavigate }: UserAuthPageProps) {
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                       </svg>
-                      Creating Account...
+                      {t('userAuth.creatingAccount')}
                     </span>
                   ) : (
-                    'Create Account'
+                    t('userAuth.createAccountBtn')
                   )}
                 </button>
               </form>
 
               <div className="mt-4 text-center text-sm text-gray-500">
-                <p>📧 No password required - just use your email to login later</p>
+                <p>{t('userAuth.noPasswordRequired')}</p>
               </div>
             </>
           ) : (
             <>
               <h2 className="text-xl font-semibold text-gray-900 mb-6 text-center">
-                Login to Your Account
+                {t('userAuth.loginToAccount')}
               </h2>
               
               {loginError && (
@@ -228,7 +230,7 @@ export function UserAuthPage({ onNavigate }: UserAuthPageProps) {
               <form onSubmit={handleLogin} className="space-y-4">
                 <div>
                   <label htmlFor="loginEmail" className="block text-sm font-medium text-gray-700 mb-1">
-                    Email Address
+                    {t('userAuth.emailAddress')}
                   </label>
                   <input
                     type="email"
@@ -236,14 +238,14 @@ export function UserAuthPage({ onNavigate }: UserAuthPageProps) {
                     value={loginEmail}
                     onChange={(e) => setLoginEmail(e.target.value)}
                     className="input-field"
-                    placeholder="your@email.com"
+                    placeholder={t('userAuth.emailPlaceholder')}
                     required
                     disabled={isSubmitting}
                     autoComplete="email"
                     autoFocus
                   />
                   <p className="text-xs text-gray-500 mt-1">
-                    Enter the email you used to register
+                    {t('userAuth.emailForLogin')}
                   </p>
                 </div>
                 
@@ -252,12 +254,12 @@ export function UserAuthPage({ onNavigate }: UserAuthPageProps) {
                   disabled={isSubmitting || !loginEmail.trim()}
                   className="w-full btn-primary"
                 >
-                  {isSubmitting ? 'Logging in...' : 'Login'}
+                  {isSubmitting ? t('userAuth.loggingIn') : t('userAuth.loginBtn')}
                 </button>
               </form>
 
               <div className="mt-4 text-center text-sm text-gray-500">
-                <p>🔒 Password-free login - we'll recognize your email</p>
+                <p>{t('userAuth.passwordFreeLogin')}</p>
               </div>
             </>
           )}
@@ -269,16 +271,16 @@ export function UserAuthPage({ onNavigate }: UserAuthPageProps) {
             onClick={() => onNavigate('landing')} 
             className="text-sm text-gray-600 hover:text-gray-900"
           >
-            ← Back to Home
+            {t('userAuth.backToHome')}
           </button>
           
           <div className="text-xs text-gray-400">
-            Need admin access?{' '}
+            {t('userAuth.needAdminAccess')}{' '}
             <button 
               onClick={() => onNavigate('admin-login')} 
               className="text-blue-600 hover:text-blue-700 underline"
             >
-              Admin Login
+              {t('userAuth.adminLogin')}
             </button>
           </div>
         </div>

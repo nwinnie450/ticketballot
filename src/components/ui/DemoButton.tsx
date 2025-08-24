@@ -1,13 +1,19 @@
 import { ballotService } from '../../services/ballotService';
 import { useBallot } from '../../hooks/useBallot';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 export function DemoButton() {
   const { refresh } = useBallot();
+  const { t } = useLanguage();
 
   const loadDemoData = () => {
     try {
       // Clear existing data first
       ballotService.clearAll();
+      
+      // Create a default session for the demo data
+      const sessionId = ballotService.createSession('Demo Session', new Date(), 'admin');
+      ballotService.setCurrentSession(sessionId);
       
       // Add sample participants
       const sampleEmails = [
@@ -30,7 +36,7 @@ export function DemoButton() {
 
       sampleEmails.forEach((email, index) => {
         try {
-          ballotService.registerParticipant(email, index % 3 === 0 ? 'admin' : 'self');
+          ballotService.registerParticipant(email, `wechat_${index + 1}`);
         } catch (err) {
           console.warn(`Failed to add ${email}:`, err);
         }
@@ -38,19 +44,19 @@ export function DemoButton() {
 
       // Create sample groups
       try {
-        ballotService.createGroup('alice@example.com', ['alice@example.com', 'bob@example.com', 'carol@example.com']);
-        ballotService.createGroup('david@example.com', ['david@example.com', 'eve@example.com']);
-        ballotService.createGroup('frank@example.com', ['frank@example.com']);
-        ballotService.createGroup('grace@example.com', ['grace@example.com', 'henry@example.com', 'ivy@example.com']);
-        ballotService.createGroup('jack@example.com', ['jack@example.com', 'kelly@example.com']);
+        ballotService.createGroup('alice@example.com', ['bob@example.com', 'carol@example.com']);
+        ballotService.createGroup('david@example.com', ['eve@example.com']);
+        ballotService.createGroup('frank@example.com', []);
+        ballotService.createGroup('grace@example.com', ['henry@example.com', 'ivy@example.com']);
+        ballotService.createGroup('jack@example.com', ['kelly@example.com']);
       } catch (err) {
         console.warn('Failed to create some groups:', err);
       }
 
       refresh();
-      alert('Demo data loaded! You can now test the application.');
+      alert(t('demo.dataLoaded'));
     } catch (err) {
-      alert('Failed to load demo data: ' + (err as Error).message);
+      alert(t('demo.failedToLoad', { error: (err as Error).message }));
     }
   };
 
@@ -59,9 +65,9 @@ export function DemoButton() {
       <button
         onClick={loadDemoData}
         className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg shadow-lg font-medium text-sm"
-        title="Load sample data for testing"
+        title={t('demo.loadSampleData')}
       >
-        🧪 Load Demo Data
+        {t('demo.loadDemoData')}
       </button>
     </div>
   );

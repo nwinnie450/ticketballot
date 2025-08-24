@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { BallotProvider } from './hooks/useBallot';
+import { LanguageProvider } from './contexts/LanguageContext';
 import { Header } from './components/layout/Header';
 import { LandingPage } from './pages/LandingPage';
 import { GroupFormationPage } from './pages/GroupFormationPage';
@@ -69,9 +70,11 @@ function AppContent() {
 
 function App() {
   return (
-    <BallotProvider>
-      <AppContent />
-    </BallotProvider>
+    <LanguageProvider>
+      <BallotProvider>
+        <AppContent />
+      </BallotProvider>
+    </LanguageProvider>
   );
 }
 

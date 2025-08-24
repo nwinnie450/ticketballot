@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useBallot } from '../hooks/useBallot';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface ResultsPageProps {
   onNavigate: (page: string) => void;
@@ -7,6 +8,7 @@ interface ResultsPageProps {
 
 export function ResultsPage({ onNavigate }: ResultsPageProps) {
   const { ballotResults, groups } = useBallot();
+  const { t } = useLanguage();
   const [searchEmail, setSearchEmail] = useState('');
   const [searchResult, setSearchResult] = useState<{
     found: boolean;
@@ -46,12 +48,12 @@ export function ResultsPage({ onNavigate }: ResultsPageProps) {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
         <div className="card max-w-md text-center">
           <div className="text-4xl mb-4">⏳</div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">No Results Yet</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">{t('results.noResultsYet')}</h2>
           <p className="text-gray-600 mb-6">
-            The ballot hasn't been drawn yet. Results will be published here once available.
+            {t('results.notDrawnYet')}
           </p>
           <button onClick={() => onNavigate('landing')} className="btn-primary">
-            Back to Home
+            {t('results.backToHome')}
           </button>
         </div>
       </div>
@@ -71,27 +73,27 @@ export function ResultsPage({ onNavigate }: ResultsPageProps) {
         {/* Header */}
         <div className="text-center">
           <div className="text-4xl mb-4">🎯</div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Ballot Results</h1>
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">{t('results.ballotResults')}</h1>
           <p className="text-gray-600 text-lg">
-            Drawn on {new Date(ballotResults.drawnAt).toLocaleDateString()} at {' '}
+            {t('results.drawnOn')} {new Date(ballotResults.drawnAt).toLocaleDateString()} {t('results.at')} {' '}
             {new Date(ballotResults.drawnAt).toLocaleTimeString()}
           </p>
           
           <div className="flex justify-center gap-8 mt-6 text-sm text-gray-600">
             <div>
               <span className="text-2xl font-bold text-primary-600">{ballotResults.totalGroups}</span>
-              <div>Total Groups</div>
+              <div>{t('results.totalGroups')}</div>
             </div>
             <div>
               <span className="text-2xl font-bold text-primary-600">{ballotResults.totalParticipants}</span>
-              <div>Total Participants</div>
+              <div>{t('results.totalParticipants')}</div>
             </div>
           </div>
         </div>
 
         {/* Search Section */}
         <div className="card max-w-2xl mx-auto">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">🔍 Find Your Group</h2>
+          <h2 className="text-xl font-bold text-gray-900 mb-4">🔍 {t('results.findYourGroup')}</h2>
           
           <form onSubmit={handleSearch} className="space-y-4">
             <div className="flex gap-3">
@@ -100,11 +102,11 @@ export function ResultsPage({ onNavigate }: ResultsPageProps) {
                 value={searchEmail}
                 onChange={(e) => setSearchEmail(e.target.value)}
                 className="flex-1 input-field"
-                placeholder="Enter your email address"
+                placeholder={t('results.enterEmail')}
                 required
               />
               <button type="submit" className="btn-primary">
-                Search
+                {t('results.search')}
               </button>
             </div>
           </form>
@@ -120,15 +122,15 @@ export function ResultsPage({ onNavigate }: ResultsPageProps) {
                       </span>
                       <div>
                         <h3 className="font-bold text-success-800">
-                          Position #{searchResult.position}
+                          {t('results.position', { position: searchResult.position })}
                         </h3>
                         <p className="text-success-700">
-                          {searchResult.group.name || 'Unnamed Group'} ({searchResult.group.members.length + 1} members)
+                          {searchResult.group.name || t('results.unnamedGroup')} ({t('results.members', { count: searchResult.group.members.length + 1 })})
                         </p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="text-sm text-success-600">Representative:</div>
+                      <div className="text-sm text-success-600">{t('results.representative')}:</div>
                       <div className="font-medium text-success-800">
                         {searchResult.group.representative}
                       </div>
@@ -140,9 +142,9 @@ export function ResultsPage({ onNavigate }: ResultsPageProps) {
                   <div className="flex items-center">
                     <span className="text-warning-600 text-2xl mr-3">❌</span>
                     <div>
-                      <h3 className="font-bold text-warning-800">Not Found</h3>
+                      <h3 className="font-bold text-warning-800">{t('results.notFound')}</h3>
                       <p className="text-warning-700">
-                        This email was not part of any group in the ballot.
+                        {t('results.emailNotInGroup')}
                       </p>
                     </div>
                   </div>
@@ -155,7 +157,7 @@ export function ResultsPage({ onNavigate }: ResultsPageProps) {
         {/* Results List */}
         <div className="card">
           <div className="mb-4">
-            <h2 className="text-xl md:text-2xl font-bold text-gray-900">Allocation Order</h2>
+            <h2 className="text-xl md:text-2xl font-bold text-gray-900">{t('results.allocationOrder')}</h2>
           </div>
           
           <div className="mb-6">
@@ -176,7 +178,7 @@ export function ResultsPage({ onNavigate }: ResultsPageProps) {
               }}
               className="btn-secondary text-sm"
             >
-              📥 Download Results
+              📥 {t('results.downloadResults')}
             </button>
           </div>
 
@@ -209,15 +211,15 @@ export function ResultsPage({ onNavigate }: ResultsPageProps) {
                         </span>
                       </div>
                       <p className="text-sm text-gray-600">
-                        {group?.members.length || 0} member{(group?.members.length || 0) !== 1 ? 's' : ''}
+                        {(group?.members.length || 0) === 1 ? t('results.member', { count: group?.members.length || 0 }) : t('results.members', { count: group?.members.length || 0 })}
                       </p>
                     </div>
                   </div>
 
                   <div className="text-right hidden md:block">
-                    <div className="text-sm text-gray-500">Representative</div>
+                    <div className="text-sm text-gray-500">{t('results.representative')}</div>
                     <div className="font-medium text-gray-900 max-w-48 truncate">
-                      {group?.representative || 'Unknown'}
+                      {group?.representative || t('results.unknown')}
                     </div>
                   </div>
                 </div>
@@ -229,8 +231,8 @@ export function ResultsPage({ onNavigate }: ResultsPageProps) {
         {/* Detailed Participant List Ordered by Position */}
         <div className="card">
           <div className="mb-4">
-            <h2 className="text-xl md:text-2xl font-bold text-gray-900">🎯 Complete Allocation List</h2>
-            <span className="text-sm text-gray-500">All participants in draw order</span>
+            <h2 className="text-xl md:text-2xl font-bold text-gray-900">🎯 {t('results.completeAllocationList')}</h2>
+            <span className="text-sm text-gray-500">{t('results.allParticipants')}</span>
           </div>
           
           <div className="mb-6">
@@ -272,7 +274,7 @@ export function ResultsPage({ onNavigate }: ResultsPageProps) {
               className="btn-secondary text-sm flex items-center space-x-2"
             >
               <span>📊</span>
-              <span>Download Excel</span>
+              <span>{t('results.downloadExcel')}</span>
             </button>
           </div>
           
@@ -305,7 +307,7 @@ export function ResultsPage({ onNavigate }: ResultsPageProps) {
                           </span>
                         </div>
                         <p className="text-sm text-gray-500">
-                          {group.members.length + 1} participants
+                          {group.members.length + 1} {t('results.participants')}
                         </p>
                       </div>
                     </div>
@@ -313,7 +315,7 @@ export function ResultsPage({ onNavigate }: ResultsPageProps) {
                     <div className="ml-13 space-y-1">
                       {/* Representative first */}
                       <div className="flex items-center text-sm">
-                        <span className="inline-block w-12 text-xs text-purple-600 font-medium">Rep:</span>
+                        <span className="inline-block w-12 text-xs text-purple-600 font-medium">{t('results.rep')}:</span>
                         <span className="text-gray-900 font-medium">{group.representative}</span>
                       </div>
                       
@@ -334,10 +336,10 @@ export function ResultsPage({ onNavigate }: ResultsPageProps) {
         {/* Action Buttons */}
         <div className="text-center space-x-4">
           <button onClick={() => onNavigate('landing')} className="btn-secondary">
-            Back to Home
+            {t('results.backToHome')}
           </button>
           <button onClick={() => onNavigate('status')} className="btn-primary">
-            Check My Status
+            {t('results.checkMyStatus')}
           </button>
         </div>
       </div>

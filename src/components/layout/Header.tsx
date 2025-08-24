@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useBallot } from '../../hooks/useBallot';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { authService } from '../../services/authService';
 
 interface HeaderProps {
@@ -9,6 +10,7 @@ interface HeaderProps {
 
 export function Header({ onNavigate, currentPage }: HeaderProps) {
   const { userRole, currentUser, setCurrentUser } = useBallot();
+  const { language, setLanguage, t } = useLanguage();
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   
   const isAdminAuthenticated = authService.isAuthenticated();
@@ -21,13 +23,8 @@ export function Header({ onNavigate, currentPage }: HeaderProps) {
       return;
     }
     
-    // If user is logged in, go to status page  
-    if (userRole === 'user' || userRole === 'representative') {
-      onNavigate('status');
-      return;
-    }
-    
-    // Guests go to landing page to register/login
+    // All users (including logged-in ones) can go to landing page
+    // This allows users to see the main content and access other features
     onNavigate('landing');
   };
 
@@ -47,23 +44,23 @@ export function Header({ onNavigate, currentPage }: HeaderProps) {
   };
 
   const navItems = [
-    { id: 'landing', label: 'Home', roles: ['guest', 'user', 'representative', 'admin'] },
+    { id: 'landing', label: t('header.home'), roles: ['guest', 'user', 'representative', 'admin'] },
     // Only show Register for guests (not logged in users)
-    { id: 'registration', label: 'Register', roles: ['guest'] },
-    { id: 'group-formation', label: 'Create Group', roles: ['user', 'representative'] },
-    { id: 'status', label: 'My Status', roles: ['user', 'representative'] },
-    { id: 'results', label: 'Results', roles: ['guest', 'user', 'representative', 'admin'] },
+    { id: 'registration', label: t('header.register'), roles: ['guest'] },
+    { id: 'group-formation', label: t('header.createGroup'), roles: ['user', 'representative'] },
+    { id: 'status', label: t('header.myStatus'), roles: ['user', 'representative'] },
+    { id: 'results', label: t('header.results'), roles: ['guest', 'user', 'representative', 'admin'] },
   ];
 
   // Add login option for guests
   const loginItems = !currentUser && !isAdminAuthenticated ? [
-    { id: 'user-auth', label: '🔐 Register/Login', roles: ['guest'] },
+    { id: 'user-auth', label: t('header.register'), roles: ['guest'] },
   ] : [];
 
   // Add admin navigation items if authenticated
   const adminNavItems = isAdminAuthenticated ? [
-    { id: 'admin-dashboard', label: 'Dashboard', roles: ['admin'] },
-    { id: 'admin-settings', label: 'Admin Settings', roles: ['admin'] },
+    { id: 'admin-dashboard', label: t('admin.dashboard'), roles: ['admin'] },
+    { id: 'admin-settings', label: t('admin.settings'), roles: ['admin'] },
   ] : [];
 
   const allNavItems = [...navItems, ...loginItems, ...adminNavItems];
@@ -82,7 +79,7 @@ export function Header({ onNavigate, currentPage }: HeaderProps) {
               className="flex items-center space-x-2 text-xl font-bold text-primary-600 hover:text-primary-700"
             >
               <span className="text-2xl">🎫</span>
-              <span className="hidden sm:block">Ticket Ballot</span>
+              <span className="hidden sm:block">{t('header.home')}</span>
             </button>
           </div>
 
@@ -105,20 +102,26 @@ export function Header({ onNavigate, currentPage }: HeaderProps) {
 
           {/* User Info & Actions */}
           <div className="flex items-center space-x-4">
+            {/* Language Toggle */}
+            <button
+              onClick={() => setLanguage(language === 'en' ? 'zh' : 'en')}
+              className="text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 px-2 py-1 rounded transition-colors"
+              title={language === 'en' ? '切换到中文' : 'Switch to English'}
+            >
+              {language === 'en' ? '中' : 'EN'}
+            </button>
             {currentUser && (
               <div className="hidden sm:flex items-center space-x-2 text-sm text-gray-600">
                 <span>{currentUser}</span>
                 <button
                   onClick={() => {
-                    if (confirm('Logout from current user session?')) {
-                      setCurrentUser(null);
-                      onNavigate('landing');
-                    }
+                    setCurrentUser(null);
+                    onNavigate('landing');
                   }}
                   className="text-xs text-gray-500 hover:text-gray-700 underline"
-                  title="Logout User"
+                  title={t('header.logout')}
                 >
-                  logout
+                  {t('header.userLogout')}
                 </button>
               </div>
             )}
@@ -128,24 +131,24 @@ export function Header({ onNavigate, currentPage }: HeaderProps) {
               <button
                 onClick={() => onNavigate('user-auth')}
                 className="text-sm bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg transition-colors"
-                title="Register or Login"
+                title={t('userAuth.registerDescription')}
               >
-                🔐 Join
+                {t('header.join')}
               </button>
             ) : isAdminAuthenticated ? (
               <button
                 onClick={handleAdminAction}
                 className="text-sm bg-primary-100 hover:bg-primary-200 text-primary-700 px-3 py-1 rounded-full transition-colors"
-                title={currentPage.startsWith('admin-') ? 'Logout' : 'Admin Dashboard'}
+                title={currentPage.startsWith('admin-') ? t('header.logout') : t('header.dashboard')}
               >
-                {currentPage.startsWith('admin-') ? '🚪 Logout' : '⚙️ Dashboard'}
+                {currentPage.startsWith('admin-') ? t('header.logout') : t('header.dashboard')}
               </button>
             ) : null}
             
             {/* Show current superadmin name if logged in */}
             {isAdminAuthenticated && currentAdmin && (
               <div className="hidden sm:block text-xs text-gray-500">
-                Superadmin: {currentAdmin}
+                {t('header.adminName', { name: currentAdmin })}
               </div>
             )}
 
@@ -154,7 +157,7 @@ export function Header({ onNavigate, currentPage }: HeaderProps) {
               onClick={() => setShowMobileMenu(!showMobileMenu)}
               className="md:hidden p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100"
             >
-              <span className="sr-only">Open main menu</span>
+              <span className="sr-only">{t('header.openMainMenu')}</span>
               {showMobileMenu ? (
                 <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -194,16 +197,14 @@ export function Header({ onNavigate, currentPage }: HeaderProps) {
                   <span>Logged in as: {currentUser}</span>
                   <button
                     onClick={() => {
-                      if (confirm('Logout from current user session?')) {
-                        setCurrentUser(null);
-                        onNavigate('landing');
-                        setShowMobileMenu(false);
-                      }
+                      setCurrentUser(null);
+                      onNavigate('landing');
+                      setShowMobileMenu(false);
                     }}
                     className="text-xs text-gray-500 hover:text-gray-700 underline"
-                    title="Logout User"
+                    title={t('header.logout')}
                   >
-                    logout
+                    {t('header.userLogout')}
                   </button>
                 </div>
               )}

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { authService } from '../services/authService';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface AdminLoginPageProps {
   onNavigate: (page: string) => void;
@@ -7,6 +8,7 @@ interface AdminLoginPageProps {
 }
 
 export function AdminLoginPage({ onNavigate, onLoginSuccess }: AdminLoginPageProps) {
+  const { t } = useLanguage();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -34,12 +36,12 @@ export function AdminLoginPage({ onNavigate, onLoginSuccess }: AdminLoginPagePro
         {/* Header */}
         <div className="text-center mb-8">
           <div className="text-4xl mb-4">⚙️</div>
-          <h1 className="text-3xl font-bold text-gray-900">Administrator Login</h1>
+          <h1 className="text-3xl font-bold text-gray-900">{t('adminLogin.title')}</h1>
           <p className="text-gray-600 mt-2">
-            Secure access to ballot administration panel
+            {t('adminLogin.description')}
           </p>
           <div className="inline-flex items-center px-3 py-1 mt-3 text-xs font-medium text-red-700 bg-red-100 border border-red-200 rounded-full">
-            🔒 Admin Access Only
+            🔒 {t('adminLogin.accessOnly')}
           </div>
         </div>
 
@@ -49,7 +51,7 @@ export function AdminLoginPage({ onNavigate, onLoginSuccess }: AdminLoginPagePro
             {error && (
               <div className="bg-error-50 border border-error-200 rounded-lg p-4">
                 <div className="flex items-center">
-                  <span className="text-error-600 font-semibold">⚠️ Error:</span>
+                  <span className="text-error-600 font-semibold">⚠️ {t('adminLogin.error')}:</span>
                   <span className="ml-2 text-error-700">{error}</span>
                 </div>
               </div>
@@ -57,7 +59,7 @@ export function AdminLoginPage({ onNavigate, onLoginSuccess }: AdminLoginPagePro
 
             <div>
               <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
-                Username
+                {t('adminLogin.username')}
               </label>
               <input
                 type="text"
@@ -65,7 +67,7 @@ export function AdminLoginPage({ onNavigate, onLoginSuccess }: AdminLoginPagePro
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 className="input-field"
-                placeholder="Enter admin username"
+                placeholder={t('adminLogin.usernamePlaceholder')}
                 required
                 disabled={loading}
                 autoComplete="username"
@@ -74,7 +76,7 @@ export function AdminLoginPage({ onNavigate, onLoginSuccess }: AdminLoginPagePro
 
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-                Password
+                {t('adminLogin.password')}
               </label>
               <input
                 type="password"
@@ -82,7 +84,7 @@ export function AdminLoginPage({ onNavigate, onLoginSuccess }: AdminLoginPagePro
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="input-field"
-                placeholder="Enter password"
+                placeholder={t('adminLogin.passwordPlaceholder')}
                 required
                 disabled={loading}
                 autoComplete="current-password"
@@ -100,10 +102,10 @@ export function AdminLoginPage({ onNavigate, onLoginSuccess }: AdminLoginPagePro
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
-                  Signing In...
+                  {t('adminLogin.signingIn')}
                 </span>
               ) : (
-                'Sign In'
+                t('adminLogin.signIn')
               )}
             </button>
           </form>
@@ -113,38 +115,26 @@ export function AdminLoginPage({ onNavigate, onLoginSuccess }: AdminLoginPagePro
               onClick={() => onNavigate('landing')}
               className="text-primary-600 hover:text-primary-700 text-sm font-medium"
             >
-              ← Back to Public Site
+              ← {t('adminLogin.backToSite')}
             </button>
             
             <div className="text-xs text-gray-400">
-              Regular user?{' '}
+              {t('adminLogin.regularUser')}{' '}
               <button 
                 onClick={() => onNavigate('user-auth')} 
                 className="text-blue-600 hover:text-blue-700 underline"
               >
-                User Registration/Login
+                {t('adminLogin.userRegistration')}
               </button>
             </div>
           </div>
         </div>
 
-        {/* Default Credentials Info */}
+        {/* Access Information */}
         <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <h3 className="text-sm font-semibold text-blue-800 mb-2">🚀 Default Login Accounts</h3>
-          <div className="text-sm text-blue-700 space-y-3">
-            <div>
-              <p><strong>Standard Admin:</strong></p>
-              <p>Username: <code className="bg-blue-100 px-1 rounded">admin</code></p>
-              <p>Password: <code className="bg-blue-100 px-1 rounded">password</code></p>
-            </div>
-            <div>
-              <p><strong>Super Admin:</strong></p>
-              <p>Username: <code className="bg-blue-100 px-1 rounded">superadmin</code></p>
-              <p>Password: <code className="bg-blue-100 px-1 rounded">MyPassword</code></p>
-            </div>
-            <p className="mt-2 text-xs">
-              ⚠️ Please change default passwords after first login
-            </p>
+          <h3 className="text-sm font-semibold text-blue-800 mb-2">🔐 {t('adminLogin.accessOnly')}</h3>
+          <div className="text-sm text-blue-700">
+            <p>{t('adminLogin.adminAccessDescription')}</p>
           </div>
         </div>
 
@@ -152,18 +142,18 @@ export function AdminLoginPage({ onNavigate, onLoginSuccess }: AdminLoginPagePro
         <div className="mt-8 grid grid-cols-1 gap-4 text-center">
           <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
             <div className="text-2xl mb-2">👥</div>
-            <h3 className="font-semibold text-gray-900">Manage Participants</h3>
-            <p className="text-sm text-gray-600">Add, remove, and view all participants</p>
+            <h3 className="font-semibold text-gray-900">{t('adminLogin.manageParticipants')}</h3>
+            <p className="text-sm text-gray-600">{t('adminLogin.manageDescription')}</p>
           </div>
           <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
             <div className="text-2xl mb-2">🎯</div>
-            <h3 className="font-semibold text-gray-900">Run Ballot</h3>
-            <p className="text-sm text-gray-600">Execute fair randomized ballot draws</p>
+            <h3 className="font-semibold text-gray-900">{t('adminLogin.runBallot')}</h3>
+            <p className="text-sm text-gray-600">{t('adminLogin.runDescription')}</p>
           </div>
           <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
             <div className="text-2xl mb-2">📊</div>
-            <h3 className="font-semibold text-gray-900">View Results</h3>
-            <p className="text-sm text-gray-600">Export and analyze ballot results</p>
+            <h3 className="font-semibold text-gray-900">{t('adminLogin.viewResultsFeature')}</h3>
+            <p className="text-sm text-gray-600">{t('adminLogin.viewDescription')}</p>
           </div>
         </div>
       </div>

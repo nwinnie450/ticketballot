@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useBallot } from '../hooks/useBallot';
 import { authService } from '../services/authService';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface AdminSettingsPageProps {
   onNavigate: (page: string) => void;
 }
 
 export function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps) {
+  const { t } = useLanguage();
   const { 
     clearBallotData, 
     participants, 
@@ -111,41 +113,41 @@ export function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps) {
   };
 
   const handleRemoveAdmin = async (username: string) => {
-    if (!confirm(`Are you sure you want to remove admin '${username}'?`)) return;
+    if (!confirm(t('adminSettings.confirmRemoveAdmin', { username }))) return;
 
     clearMessages();
     try {
       authService.removeAdmin(username);
-      setSuccess(`Admin '${username}' removed successfully`);
+      setSuccess(t('adminSettings.adminRemoved', { username }));
       loadData();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to remove admin');
+      setError(err instanceof Error ? err.message : t('adminSettings.failedToRemoveAdmin'));
     }
   };
 
   const handleClearAllData = () => {
-    if (!confirm('⚠️ This will delete ALL ballot data and reset the system. This cannot be undone. Are you sure?')) return;
-    if (!confirm('This includes all participants, groups, results, and admin accounts except the default admin. Continue?')) return;
+    if (!confirm(t('adminSettings.confirmClearAll1'))) return;
+    if (!confirm(t('adminSettings.confirmClearAll2'))) return;
 
     try {
       authService.clearAllData();
-      setSuccess('All data cleared successfully. Please refresh the page.');
+      setSuccess(t('adminSettings.allDataCleared'));
       loadData();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to clear data');
+      setError(err instanceof Error ? err.message : t('adminSettings.failedToClearData'));
     }
   };
 
   const handleClearBallotData = async () => {
-    if (!confirm('⚠️ This will delete ALL ballot data (participants, groups, results) but keep admin accounts. Continue?')) return;
-    if (!confirm('This includes all participants, groups, ballot results, and sessions. Admin accounts will be preserved. Are you sure?')) return;
+    if (!confirm(t('adminSettings.confirmClearBallot1'))) return;
+    if (!confirm(t('adminSettings.confirmClearBallot2'))) return;
 
     try {
       await clearBallotData();
-      setSuccess('Ballot data cleared successfully. Admin accounts preserved.');
+      setSuccess(t('adminSettings.ballotDataCleared'));
       loadData();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to clear ballot data');
+      setError(err instanceof Error ? err.message : t('adminSettings.failedToClearBallotData'));
     }
   };
 
@@ -188,19 +190,19 @@ export function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps) {
   };
 
   const handleRemoveUser = async (email: string) => {
-    if (!confirm(`Remove user ${email}? This will also remove them from any groups.`)) return;
+    if (!confirm(t('adminSettings.confirmRemoveUser', { email }))) return;
     
     try {
       await removeParticipant(email);
-      setSuccess(`User ${email} removed successfully`);
+      setSuccess(t('adminSettings.userRemoved', { email }));
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to remove user');
+      setError(err instanceof Error ? err.message : t('adminSettings.failedToRemoveUser'));
     }
   };
 
 
   const handleRemoveFromGroup = async (email: string) => {
-    if (!confirm(`Remove ${email} from their group? They will become ungrouped.`)) return;
+    if (!confirm(t('adminSettings.confirmRemoveFromGroup', { email }))) return;
     
     try {
       const userGroup = groups.find(g => 
@@ -298,9 +300,9 @@ export function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps) {
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-6">
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Admin Settings</h1>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">{t('adminSettings.title')}</h1>
           <p className="text-gray-600 mt-1">
-            Manage your admin account and system settings
+            {t('adminSettings.description')}
           </p>
         </div>
 
@@ -329,26 +331,26 @@ export function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps) {
         {/* Admin Stats */}
         {adminStats && (
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Current Session</h2>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('adminSettings.currentSession')}</h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div>
-                <div className="text-sm text-gray-600">Logged in as</div>
+                <div className="text-sm text-gray-600">{t('adminSettings.loggedInAs')}</div>
                 <div className="font-semibold text-gray-900">{adminStats.currentAdmin}</div>
               </div>
               <div>
-                <div className="text-sm text-gray-600">Login time</div>
+                <div className="text-sm text-gray-600">{t('adminSettings.loginTime')}</div>
                 <div className="font-semibold text-gray-900">
                   {adminStats.loginTime ? new Date(adminStats.loginTime).toLocaleTimeString() : 'Unknown'}
                 </div>
               </div>
               <div>
-                <div className="text-sm text-gray-600">Total admins</div>
+                <div className="text-sm text-gray-600">{t('adminSettings.totalAdmins')}</div>
                 <div className="font-semibold text-gray-900">{adminStats.totalAdmins}</div>
               </div>
               <div>
-                <div className="text-sm text-gray-600">Session status</div>
+                <div className="text-sm text-gray-600">{t('adminSettings.sessionStatus')}</div>
                 <div className={`font-semibold ${adminStats.sessionValid ? 'text-success-600' : 'text-error-600'}`}>
-                  {adminStats.sessionValid ? 'Valid' : 'Expired'}
+                  {adminStats.sessionValid ? t('adminSettings.valid') : t('adminSettings.expired')}
                 </div>
               </div>
             </div>
@@ -384,13 +386,13 @@ export function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps) {
               className="btn-secondary flex items-center justify-center space-x-2"
             >
               <span>🔄</span>
-              <span>{loading || ballotLoading ? 'Refreshing...' : 'Refresh Data'}</span>
+              <span>{loading || ballotLoading ? t('common.loading') : t('adminSettings.refreshData')}</span>
             </button>
             <button
               onClick={() => onNavigate('admin-dashboard')}
               className="btn-secondary"
             >
-              ← Back to Dashboard
+              ← {t('adminSettings.backToDashboard')}
             </button>
           </div>
         </div>
@@ -400,10 +402,10 @@ export function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps) {
           {/* Desktop Tabs */}
           <nav className="hidden md:flex space-x-8 px-6" aria-label="Tabs">
             {[
-              { id: 'password', name: 'Change Password', icon: '🔒' },
-              { id: 'admins', name: 'Manage Admins', icon: '👥' },
-              { id: 'users', name: 'Manage Users', icon: '👤' },
-              { id: 'system', name: 'System', icon: '⚙️' },
+              { id: 'password', name: t('adminSettings.password'), icon: '🔒' },
+              { id: 'admins', name: t('adminSettings.admins'), icon: '👥' },
+              { id: 'users', name: t('adminSettings.users'), icon: '👤' },
+              { id: 'system', name: t('adminSettings.system'), icon: '⚙️' },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -423,10 +425,10 @@ export function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps) {
           {/* Mobile Tabs - Grid Layout */}
           <nav className="md:hidden grid grid-cols-2 gap-1 p-3" aria-label="Mobile Tabs">
             {[
-              { id: 'password', name: 'Password', icon: '🔒' },
-              { id: 'admins', name: 'Admins', icon: '👥' },
-              { id: 'users', name: 'Users', icon: '👤' },
-              { id: 'system', name: 'System', icon: '⚙️' },
+              { id: 'password', name: t('adminSettings.passwordShort'), icon: '🔒' },
+              { id: 'admins', name: t('adminSettings.admins'), icon: '👥' },
+              { id: 'users', name: t('adminSettings.users'), icon: '👤' },
+              { id: 'system', name: t('adminSettings.system'), icon: '⚙️' },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -448,12 +450,12 @@ export function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps) {
         <div className="space-y-6">
           {activeTab === 'password' && (
             <div className="card">
-              <h3 className="text-lg font-semibold text-gray-900 mb-6">Change Password</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-6">{t('adminSettings.changePassword')}</h3>
               
               <form onSubmit={handlePasswordChange} className="space-y-4">
                 <div>
                   <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700 mb-1">
-                    Current Password
+                    {t('adminSettings.currentPassword')}
                   </label>
                   <input
                     type="password"
@@ -469,7 +471,7 @@ export function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps) {
 
                 <div>
                   <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-1">
-                    New Password
+                    {t('adminSettings.newPassword')}
                   </label>
                   <input
                     type="password"
@@ -482,12 +484,12 @@ export function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps) {
                     disabled={loading}
                     autoComplete="new-password"
                   />
-                  <p className="text-xs text-gray-500 mt-1">Minimum 6 characters</p>
+                  <p className="text-xs text-gray-500 mt-1">{t('adminSettings.minimumCharacters')}</p>
                 </div>
 
                 <div>
                   <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
-                    Confirm New Password
+                    {t('adminSettings.confirmNewPassword')}
                   </label>
                   <input
                     type="password"
@@ -506,7 +508,7 @@ export function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps) {
                   disabled={loading || !currentPassword || !newPassword || !confirmPassword}
                   className="btn-primary"
                 >
-                  {loading ? 'Changing Password...' : 'Change Password'}
+                  {loading ? t('adminSettings.changingPassword') : t('adminSettings.changePassword')}
                 </button>
               </form>
             </div>
@@ -516,13 +518,13 @@ export function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps) {
             <div className="space-y-6">
               {/* Add New Admin */}
               <div className="card">
-                <h3 className="text-lg font-semibold text-gray-900 mb-6">Add New Admin</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-6">{t('adminSettings.addNewAdmin')}</h3>
                 
                 <form onSubmit={handleAddAdmin} className="space-y-4">
                   <div className="grid md:grid-cols-2 gap-4">
                     <div>
                       <label htmlFor="newUsername" className="block text-sm font-medium text-gray-700 mb-1">
-                        Username
+                        {t('adminSettings.username')}
                       </label>
                       <input
                         type="text"
@@ -539,7 +541,7 @@ export function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps) {
 
                     <div>
                       <label htmlFor="newAdminPassword" className="block text-sm font-medium text-gray-700 mb-1">
-                        Password
+                        {t('adminSettings.passwordShort')}
                       </label>
                       <input
                         type="password"
@@ -560,30 +562,30 @@ export function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps) {
                     disabled={loading || !newUsername.trim() || !newAdminPassword}
                     className="btn-primary"
                   >
-                    {loading ? 'Adding Admin...' : 'Add Admin'}
+                    {loading ? t('adminSettings.addingAdmin') : t('adminSettings.addAdmin')}
                   </button>
                 </form>
               </div>
 
               {/* Existing Admins */}
               <div className="card">
-                <h3 className="text-lg font-semibold text-gray-900 mb-6">Existing Admins</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-6">{t('adminSettings.existingAdmins')}</h3>
                 
                 <div className="overflow-x-auto shadow ring-1 ring-black ring-opacity-5 rounded-lg">
                   <table className="min-w-full divide-y divide-gray-300">
                     <thead className="bg-gray-50">
                       <tr>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Username
+                          {t('adminSettings.username')}
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Created
+                          {t('adminSettings.created')}
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Last Login
+                          {t('adminSettings.lastLogin')}
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Actions
+                          {t('adminSettings.actions')}
                         </th>
                       </tr>
                     </thead>
@@ -595,12 +597,12 @@ export function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps) {
                               <span className="text-sm font-medium text-gray-900">{admin.username}</span>
                               {admin.username === adminStats?.currentAdmin && (
                                 <span className="ml-2 px-2 py-1 text-xs bg-primary-100 text-primary-700 rounded-full">
-                                  Current
+                                  {t('adminSettings.current')}
                                 </span>
                               )}
                               {admin.username === 'admin' && (
                                 <span className="ml-2 px-2 py-1 text-xs bg-yellow-100 text-yellow-700 rounded-full">
-                                  Default
+                                  {t('adminSettings.default')}
                                 </span>
                               )}
                             </div>
@@ -617,7 +619,7 @@ export function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps) {
                                 onClick={() => handleRemoveAdmin(admin.username)}
                                 className="text-error-600 hover:text-error-900"
                               >
-                                Remove
+                                {t('common.remove')}
                               </button>
                             )}
                           </td>
@@ -634,16 +636,16 @@ export function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps) {
             <div className="space-y-6">
               {/* Add New Participant */}
               <div className="card">
-                <h3 className="text-lg font-semibold text-gray-900 mb-6">Add New Participant</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-6">{t('adminSettings.addNewParticipant')}</h3>
                 
                 <div className="bg-blue-50 p-4 rounded-lg mb-4">
                   <div className="flex items-start space-x-3">
                     <span className="text-2xl">🎩</span>
                     <div>
-                      <h4 className="font-medium text-blue-900 mb-1">Simple System</h4>
+                      <h4 className="font-medium text-blue-900 mb-1">{t('adminSettings.simpleSystem')}</h4>
                       <p className="text-sm text-blue-700">
-                        <strong>Superadmin:</strong> Manages the system (you) <br/>
-                        <strong>Participants:</strong> Everyone else in the ballot (no password needed)
+                        <strong>{t('adminSettings.superadminDesc')}</strong> <br/>
+                        <strong>{t('adminSettings.participantsDesc')}</strong>
                       </p>
                     </div>
                   </div>
@@ -652,7 +654,7 @@ export function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps) {
                 <form onSubmit={handleAddUser} className="space-y-4">
                   <div>
                     <label htmlFor="newUserEmail" className="block text-sm font-medium text-gray-700 mb-1">
-                      Email Address
+                      {t('adminSettings.emailAddress')}
                     </label>
                     <input
                       type="email"
@@ -666,13 +668,13 @@ export function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps) {
                       autoComplete="off"
                     />
                     <p className="text-xs text-gray-500 mt-1">
-                      Participant will be added to the ballot. They can login with just their email (no password). Use "Create Group from Existing Users" below to form groups.
+                      {t('adminSettings.participantDesc')}
                     </p>
                   </div>
 
                   <div>
                     <label htmlFor="newUserWechatId" className="block text-sm font-medium text-gray-700 mb-1">
-                      WeChat ID
+                      {t('adminSettings.wechatId')}
                     </label>
                     <input
                       type="text"
@@ -686,7 +688,7 @@ export function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps) {
                       autoComplete="off"
                     />
                     <p className="text-xs text-gray-500 mt-1">
-                      WeChat ID is required for participant identification.
+                      {t('adminSettings.wechatRequiredDesc')}
                     </p>
                   </div>
 
@@ -695,19 +697,19 @@ export function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps) {
                     disabled={loading || ballotLoading || !newUserEmail.trim() || !newUserWechatId.trim()}
                     className="btn-primary w-full"
                   >
-                    {loading || ballotLoading ? 'Adding...' : 'Add User'}
+                    {loading || ballotLoading ? t('adminSettings.addingUser') : t('adminSettings.addUser')}
                   </button>
                 </form>
               </div>
 
               {/* Create Groups from Existing Users */}
               <div className="card">
-                <h3 className="text-lg font-semibold text-gray-900 mb-6">Create Group from Existing Users</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-6">{t('adminSettings.createGroupFromUsers')}</h3>
                 
                 <form onSubmit={handleCreateGroupFromUsers} className="space-y-4">
                   <div>
                     <label htmlFor="newGroupName" className="block text-sm font-medium text-gray-700 mb-1">
-                      Group Name (Optional)
+                      {t('adminSettings.groupNameOptional')}
                     </label>
                     <input
                       type="text"
@@ -715,14 +717,14 @@ export function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps) {
                       value={newGroupName}
                       onChange={(e) => setNewGroupName(e.target.value)}
                       className="input-field"
-                      placeholder="Leave blank for Kelly song title"
+                      placeholder={t('adminSettings.leaveBlankForKelly')}
                       disabled={loading || ballotLoading}
                     />
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Select Users for Group (Max 3)
+                      {t('adminSettings.selectUsersForGroup')}
                     </label>
                     
                     {/* Available participants for group selection */}
@@ -772,14 +774,14 @@ export function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps) {
                                 </span>
                                 {selectedUsersForGroup.includes(participant.email) && (
                                   <span className="text-xs text-green-600 font-medium">
-                                    ✓ Selected for group
+                                    ✓ {t('adminSettings.selected')} {t('adminSettings.users')}
                                   </span>
                                 )}
                               </div>
                             </div>
                             {participant.role === 'representative' && participant.designatedBy && (
                               <div className="text-xs text-gray-500 mt-1">
-                                Representative designated by {participant.designatedBy}
+                                {t('adminDashboard.representative')} {t('adminSettings.added')} {t('adminSettings.by')} {participant.designatedBy}
                               </div>
                             )}
                           </div>
@@ -790,11 +792,11 @@ export function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps) {
                     {participants.filter(p => !groups.some(g => 
                       g.representative === p.email || g.members.includes(p.email)
                     )).length === 0 && (
-                      <p className="text-sm text-gray-500 py-4 text-center">No available users to form groups</p>
+                      <p className="text-sm text-gray-500 py-4 text-center">{t('adminSettings.noAvailableUsers')}</p>
                     )}
                     
                     <p className="text-xs text-gray-500 mt-2">
-                      Selected: {selectedUsersForGroup.length}/3 users
+                      {t('adminSettings.selected')} {selectedUsersForGroup.length}/3 {t('adminSettings.users')}
                     </p>
                   </div>
 
@@ -802,7 +804,7 @@ export function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps) {
                   {selectedUsersForGroup.length > 0 && (
                     <div>
                       <label htmlFor="selectedRepresentative" className="block text-sm font-medium text-gray-700 mb-1">
-                        Group Representative *
+                        {t('adminDashboard.representative')} *
                       </label>
                       <select
                         id="selectedRepresentative"
@@ -812,7 +814,7 @@ export function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps) {
                         required
                         disabled={loading || ballotLoading}
                       >
-                        <option value="">Select representative from group members...</option>
+                        <option value="">{t('adminSettings.selectRepresentativeFromGroup')}</option>
                         {selectedUsersForGroup.map(email => {
                           const participant = participants.find(p => p.email === email);
                           return (
@@ -838,36 +840,36 @@ export function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps) {
                     }
                     className="btn-primary w-full"
                   >
-                    {loading || ballotLoading ? 'Creating Group...' : `Create Group (${selectedUsersForGroup.length} members)`}
+                    {loading || ballotLoading ? t('adminSettings.creatingGroup') : `${t('adminSettings.createGroup')} (${selectedUsersForGroup.length} ${t('adminSettings.members')})`}
                   </button>
                 </form>
               </div>
 
               {/* User Management */}
               <div className="card">
-                <h3 className="text-lg font-semibold text-gray-900 mb-6">User Management ({participants.length})</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-6">{t('adminSettings.userManagement')} ({participants.length})</h3>
                 
                 <div className="overflow-x-auto shadow ring-1 ring-black ring-opacity-5 rounded-lg">
                   <table className="min-w-full divide-y divide-gray-300">
                     <thead className="bg-gray-50">
                       <tr>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Email
+                          {t('adminSettings.emailAddress')}
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          WeChat ID
+                          {t('adminSettings.wechatId')}
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Role
+                          {t('adminSettings.role')}
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Group Name
+                          {t('adminSettings.groupName')}
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Added
+                          {t('adminSettings.added')}
                         </th>
                         <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Actions
+                          {t('adminSettings.actions')}
                         </th>
                       </tr>
                     </thead>
@@ -896,20 +898,20 @@ export function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps) {
                               </span>
                               {participant.role === 'representative' && participant.designatedBy && (
                                 <div className="text-xs text-gray-500 mt-1">
-                                  by {participant.designatedBy}
+                                  {t('adminSettings.by')} {participant.designatedBy}
                                 </div>
                               )}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                               {inGroup ? (
                                 <div>
-                                  <span className="font-medium text-gray-900">{inGroup.name || 'Unnamed Group'}</span>
+                                  <span className="font-medium text-gray-900">{inGroup.name || t('adminSettings.unnamedGroup')}</span>
                                   <div className="text-xs text-gray-500">
-                                    {inGroup.representative.toLowerCase() === participant.email.toLowerCase() ? '(Representative)' : '(Member)'}
+                                    {inGroup.representative.toLowerCase() === participant.email.toLowerCase() ? `(${t('adminDashboard.representative')})` : `(${t('adminDashboard.member')})`}
                                   </div>
                                 </div>
                               ) : (
-                                <span className="text-gray-400 italic">No group</span>
+                                <span className="text-gray-400 italic">{t('adminSettings.noGroup')}</span>
                               )}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -963,7 +965,7 @@ export function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps) {
 
                   {participants.length === 0 && (
                     <div className="text-center py-8 text-gray-500">
-                      No participants yet
+                      {t('adminSettings.noParticipantsYet')}
                     </div>
                   )}
                 </div>
@@ -972,10 +974,10 @@ export function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps) {
               {/* Group Management */}
               <div className="card">
                 <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-lg font-semibold text-gray-900">Group Management ({groups.length})</h3>
+                  <h3 className="text-lg font-semibold text-gray-900">{t('adminSettings.groupManagement')} ({groups.length})</h3>
                   <div className="text-xs text-gray-500">
-                    Debug: Groups in memory: {groups.length} | 
-                    Participants: {participants.length}
+                    {t('adminSettings.debugGroupsInMemory')} {groups.length} | 
+                    {t('adminSettings.debugParticipants')} {participants.length}
                   </div>
                 </div>
 
@@ -986,7 +988,7 @@ export function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps) {
                         <div className="flex-1">
                           <div className="flex items-center space-x-3">
                             <h4 className="font-medium text-gray-900">
-                              {group.name || 'Unnamed Group'} ({group.members.length} members)
+                              {group.name || t('adminSettings.unnamedGroup')} ({group.members.length} {t('adminSettings.members')})
                             </h4>
                             <span className={`px-2 py-1 text-xs font-medium rounded-full ${
                               group.status === 'approved' 
@@ -1001,13 +1003,13 @@ export function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps) {
                           
                           <div className="mt-2 space-y-1">
                             <p className="text-sm text-gray-600">
-                              <strong>Representative:</strong> {group.representative}
+                              <strong>{t('adminDashboard.representative')}:</strong> {group.representative}
                             </p>
                             <p className="text-sm text-gray-600">
-                              <strong>Members:</strong> {group.members.join(', ')}
+                              <strong>{t('adminDashboard.members')}:</strong> {group.members.join(', ')}
                             </p>
                             <p className="text-sm text-gray-500">
-                              Created: {new Date(group.createdAt).toLocaleString()}
+                              {t('adminDashboard.createdAt')}: {new Date(group.createdAt).toLocaleString()}
                             </p>
                           </div>
                         </div>
@@ -1020,28 +1022,28 @@ export function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps) {
                                 disabled={loading || ballotLoading}
                                 className="text-success-600 hover:text-success-800 text-sm font-medium"
                               >
-                                ✅ Approve
+                                ✅ {t('adminDashboard.approve')}
                               </button>
                               <button
                                 onClick={() => {
-                                  if (confirm('Remove this group?')) {
+                                  if (confirm(t('adminSettings.confirmRemoveGroup'))) {
                                     removeGroup(group.id);
                                   }
                                 }}
                                 disabled={loading || ballotLoading}
                                 className="text-error-600 hover:text-error-800 text-sm font-medium"
                               >
-                                ❌ Reject
+                                ❌ {t('adminDashboard.reject')}
                               </button>
                             </>
                           )}
                           
                           {group.status === 'approved' && (
-                            <span className="text-success-600 text-sm">Ready for ballot</span>
+                            <span className="text-success-600 text-sm">{t('adminDashboard.readyForBallot')}</span>
                           )}
                           
                           {group.status === 'locked' && (
-                            <span className="text-blue-600 text-sm">Ballot completed</span>
+                            <span className="text-blue-600 text-sm">{t('adminDashboard.ballotCompletedStatus')}</span>
                           )}
                         </div>
                       </div>
@@ -1050,7 +1052,7 @@ export function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps) {
 
                   {groups.length === 0 && (
                     <div className="text-center py-8 text-gray-500">
-                      No groups created yet
+                      {t('adminSettings.noGroupsCreated')}
                     </div>
                   )}
                 </div>
@@ -1060,13 +1062,13 @@ export function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps) {
 
           {activeTab === 'system' && (
             <div className="card">
-              <h3 className="text-lg font-semibold text-gray-900 mb-6">System Management</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-6">{t('adminSettings.systemManagement')}</h3>
               
               <div className="space-y-6">
                 <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                  <h4 className="font-semibold text-yellow-800 mb-2">⚠️ Danger Zone</h4>
+                  <h4 className="font-semibold text-yellow-800 mb-2">⚠️ {t('adminSettings.dangerZone')}</h4>
                   <p className="text-yellow-700 text-sm mb-4">
-                    These actions cannot be undone. Please use with caution.
+                    {t('adminSettings.dangerWarning')}
                   </p>
                   
                   <div className="space-y-3">
@@ -1074,28 +1076,26 @@ export function AdminSettingsPage({ onNavigate }: AdminSettingsPageProps) {
                       onClick={handleClearBallotData}
                       className="bg-warning-600 text-white px-4 py-2 rounded-md font-medium hover:bg-warning-700 focus:outline-none focus:ring-2 focus:ring-warning-500 focus:ring-offset-2 mr-3"
                     >
-                      🧹 Clear Ballot Data Only
+                      🧹 {t('adminSettings.clearBallotOnly')}
                     </button>
                     <button
                       onClick={handleClearAllData}
                       className="bg-error-600 text-white px-4 py-2 rounded-md font-medium hover:bg-error-700 focus:outline-none focus:ring-2 focus:ring-error-500 focus:ring-offset-2"
                     >
-                      🗑️ Clear All Data
+                      🗑️ {t('adminSettings.clearAllData')}
                     </button>
                   </div>
                   
                   <div className="text-xs text-yellow-600 mt-3 space-y-1">
-                    <div><strong>Clear Ballot Data Only:</strong> Removes all participants, groups, ballot results, and sessions. Keeps admin accounts.</div>
-                    <div><strong>Clear All Data:</strong> Removes everything including admin accounts (except default admin).</div>
+                    <div><strong>{t('adminSettings.clearBallotOnly')}:</strong> {t('adminSettings.clearBallotDesc')}</div>
+                    <div><strong>{t('adminSettings.clearAllData')}:</strong> {t('adminSettings.clearAllDesc')}</div>
                   </div>
                 </div>
 
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <h4 className="font-semibold text-blue-800 mb-2">💾 Data Storage</h4>
+                  <h4 className="font-semibold text-blue-800 mb-2">💾 {t('adminSettings.dataStorage')}</h4>
                   <p className="text-blue-700 text-sm">
-                    All data is stored locally in your browser's localStorage. 
-                    No data is sent to external servers. To backup your data, 
-                    use the export features in the admin dashboard.
+                    {t('adminSettings.dataStorageDesc')}
                   </p>
                 </div>
               </div>

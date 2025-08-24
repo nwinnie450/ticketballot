@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { useBallot } from '../hooks/useBallot';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface AdminDashboardProps {
   onNavigate: (page: string) => void;
 }
 
 export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
+  const { t } = useLanguage();
   const { 
     participants, 
     groups, 
@@ -42,8 +44,6 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
   };
 
   const handleStartBallot = async () => {
-    if (!confirm('Start the ballot session? Representatives will then be able to draw their positions.')) return;
-    
     try {
       await startBallot();
       setActiveTab('ballot');
@@ -65,8 +65,8 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
         {/* Header */}
         <div className="mb-6">
           <div className="mb-4">
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-            <p className="text-gray-600 mt-1">Manage participants, groups, and ballot process</p>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">{t('adminDashboard.title')}</h1>
+            <p className="text-gray-600 mt-1">{t('adminDashboard.welcome')}</p>
           </div>
           
           <div className="flex flex-col sm:flex-row gap-3">
@@ -76,7 +76,7 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
                 disabled={loading}
                 className="bg-primary-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-primary-700 disabled:opacity-50"
               >
-                🚀 Start Ballot Session
+                🚀 {t('adminDashboard.startBallot')}
               </button>
             )}
             <button
@@ -84,7 +84,7 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
               className="btn-secondary"
               disabled={!ballotResults}
             >
-              View Results
+              {t('adminDashboard.viewResults')}
             </button>
           </div>
           
@@ -103,31 +103,31 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <div className="card text-center">
             <div className="text-3xl font-bold text-primary-600">{stats.totalParticipants}</div>
-            <div className="text-gray-600 mt-1">Total Participants</div>
+            <div className="text-gray-600 mt-1">{t('adminDashboard.totalParticipants')}</div>
           </div>
           <div className="card text-center">
             <div className="text-3xl font-bold text-warning-600">{stats.pendingGroups}</div>
-            <div className="text-gray-600 mt-1">Pending Groups</div>
+            <div className="text-gray-600 mt-1">{t('adminDashboard.pendingGroups')}</div>
           </div>
           <div className="card text-center">
             <div className="text-3xl font-bold text-success-600">{stats.approvedGroups}</div>
-            <div className="text-gray-600 mt-1">Approved Groups</div>
+            <div className="text-gray-600 mt-1">{t('adminDashboard.approvedGroups')}</div>
           </div>
           <div className="card text-center">
             <div className="text-3xl font-bold text-blue-600">{stats.lockedGroups}</div>
-            <div className="text-gray-600 mt-1">Locked Groups</div>
+            <div className="text-gray-600 mt-1">{t('adminDashboard.lockedGroups')}</div>
           </div>
         </div>
 
         {/* Navigation Tabs */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-8">
           {/* Desktop Tabs */}
-          <nav className="hidden md:flex space-x-8 px-6" aria-label="Tabs">
+          <nav className="hidden md:flex space-x-8 px-6" aria-label={t('adminDashboard.tabs')}>
             {[
-              { id: 'overview', name: 'Overview', icon: '📊' },
-              { id: 'participants', name: 'Participants', icon: '👥' },
-              { id: 'groups', name: 'Groups', icon: '🏷️' },
-              { id: 'ballot', name: 'Ballot', icon: '🎯' },
+              { id: 'overview', name: t('adminDashboard.overview'), icon: '📊' },
+              { id: 'participants', name: t('adminDashboard.participants'), icon: '👥' },
+              { id: 'groups', name: t('adminDashboard.groups'), icon: '🏷️' },
+              { id: 'ballot', name: t('adminDashboard.ballot'), icon: '🎯' },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -145,12 +145,12 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
           </nav>
           
           {/* Mobile Tabs - Grid Layout */}
-          <nav className="md:hidden grid grid-cols-2 gap-1 p-3" aria-label="Mobile Tabs">
+          <nav className="md:hidden grid grid-cols-2 gap-1 p-3" aria-label={t('adminDashboard.mobileTabs')}>
             {[
-              { id: 'overview', name: 'Overview', icon: '📊' },
-              { id: 'participants', name: 'Participants', icon: '👥' },
-              { id: 'groups', name: 'Groups', icon: '🏷️' },
-              { id: 'ballot', name: 'Ballot', icon: '🎯' },
+              { id: 'overview', name: t('adminDashboard.overview'), icon: '📊' },
+              { id: 'participants', name: t('adminDashboard.participants'), icon: '👥' },
+              { id: 'groups', name: t('adminDashboard.groups'), icon: '🏷️' },
+              { id: 'ballot', name: t('adminDashboard.ballot'), icon: '🎯' },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -174,13 +174,13 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
             <div className="grid lg:grid-cols-2 gap-6">
               {/* Recent Activity */}
               <div className="card">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('adminDashboard.recentActivity')}</h3>
                 <div className="space-y-3">
                   {groups.slice(-5).reverse().map((group) => (
                     <div key={group.id} className="flex items-center justify-between py-2">
                       <div>
                         <p className="text-sm font-medium text-gray-900">
-                          Group created ({group.members.length} members)
+                          {t('adminDashboard.groupCreated', { count: group.members.length })}
                         </p>
                         <p className="text-xs text-gray-500">
                           {new Date(group.createdAt).toLocaleDateString()}
@@ -193,24 +193,24 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
                           ? 'bg-blue-100 text-blue-700'
                           : 'bg-warning-100 text-warning-700'
                       }`}>
-                        {group.status}
+                        {t(`adminDashboard.${group.status}`)}
                       </span>
                     </div>
                   ))}
                   {groups.length === 0 && (
-                    <p className="text-gray-500 text-center py-4">No activity yet</p>
+                    <p className="text-gray-500 text-center py-4">{t('adminDashboard.noActivityYet')}</p>
                   )}
                 </div>
               </div>
 
               {/* Quick Actions */}
               <div className="card">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('adminDashboard.quickActions')}</h3>
                 
                 <form onSubmit={handleAddParticipant} className="space-y-3">
                   <div>
                     <label className="block text-sm font-medium text-gray-700">
-                      Add Participant by Email
+                      {t('adminDashboard.addParticipant')}
                     </label>
                     <div className="mt-1 space-y-2">
                       <input
@@ -218,7 +218,7 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
                         value={newParticipantEmail}
                         onChange={(e) => setNewParticipantEmail(e.target.value)}
                         className="w-full input-field"
-                        placeholder="participant@email.com"
+                        placeholder={t('adminDashboard.email')}
                         required
                       />
                       <input
@@ -226,7 +226,7 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
                         value={newParticipantWechatId}
                         onChange={(e) => setNewParticipantWechatId(e.target.value)}
                         className="w-full input-field"
-                        placeholder="WeChat ID"
+                        placeholder={t('adminDashboard.wechatId')}
                         required
                       />
                       <button
@@ -234,7 +234,7 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
                         disabled={loading || !newParticipantEmail.trim() || !newParticipantWechatId.trim()}
                         className="btn-primary"
                       >
-                        Add
+                        {t('adminDashboard.add')}
                       </button>
                     </div>
                   </div>
@@ -243,12 +243,12 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
                 <div className="mt-6 space-y-2">
                   {pendingGroups.length > 0 && (
                     <div className="text-sm text-warning-600">
-                      ⚠️ {pendingGroups.length} groups waiting for approval
+                      ⚠️ {t('adminDashboard.groupsWaitingApproval', { count: pendingGroups.length })}
                     </div>
                   )}
                   {ballotResults && (
                     <div className="text-sm text-success-600">
-                      ✅ Ballot completed with {ballotResults.totalGroups} groups
+                      {t('adminDashboard.ballotCompleted', { count: ballotResults.totalGroups })}
                     </div>
                   )}
                 </div>
@@ -259,7 +259,7 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
           {activeTab === 'participants' && (
             <div className="card">
               <div className="mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">Participants ({participants.length})</h3>
+                <h3 className="text-lg font-semibold text-gray-900">{t('adminDashboard.participantsHeader', { count: participants.length || 0 })}</h3>
               </div>
               
               <div className="mb-6">
@@ -267,34 +267,34 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
                   <div className="space-y-3">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Email Address
+                        {t('adminDashboard.emailAddress')}
                       </label>
                       <input
                         type="email"
                         value={newParticipantEmail}
                         onChange={(e) => setNewParticipantEmail(e.target.value)}
                         className="w-full input-field"
-                        placeholder="participant@email.com"
+                        placeholder={t('adminDashboard.email')}
                         required
                       />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        WeChat ID
+                        {t('adminDashboard.wechatIdLabel')}
                       </label>
                       <input
                         type="text"
                         value={newParticipantWechatId}
                         onChange={(e) => setNewParticipantWechatId(e.target.value)}
                         className="w-full input-field"
-                        placeholder="Enter WeChat ID for identification"
+                        placeholder={t('adminDashboard.wechatIdPlaceholder')}
                         required
                       />
                     </div>
                   </div>
                   <div>
                     <button type="submit" disabled={loading} className="btn-primary">
-                      Add Participant
+                      {t('adminDashboard.addParticipant')}
                     </button>
                   </div>
                 </form>
@@ -305,25 +305,25 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
                   <thead className="bg-gray-50">
                     <tr>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Email
+                        {t('adminDashboard.email')}
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        WeChat ID
+                        {t('adminDashboard.wechatId')}
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Role
+                        {t('adminDashboard.role')}
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Added By
+                        {t('adminDashboard.addedBy')}
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Date
+                        {t('adminDashboard.date')}
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Group Status
+                        {t('adminDashboard.groupStatus')}
                       </th>
                       <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Actions
+                        {t('adminDashboard.actions')}
                       </th>
                     </tr>
                   </thead>
@@ -348,11 +348,11 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
                                 ? 'bg-purple-100 text-purple-800' 
                                 : 'bg-gray-100 text-gray-800'
                             }`}>
-                              {participant.role}
+                              {participant.role === 'representative' ? t('adminDashboard.roleRepresentative') : t('adminDashboard.roleUser')}
                             </span>
                             {participant.role === 'representative' && participant.designatedBy && (
                               <div className="text-xs text-gray-500 mt-1">
-                                by {participant.designatedBy}
+                                {t('adminSettings.by')} {participant.designatedBy === 'admin' ? t('adminDashboard.addedByAdmin') : t('adminDashboard.addedBySelf')}
                               </div>
                             )}
                           </td>
@@ -362,7 +362,7 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
                                 ? 'bg-blue-100 text-blue-800' 
                                 : 'bg-green-100 text-green-800'
                             }`}>
-                              {participant.addedBy}
+                              {participant.addedBy === 'admin' ? t('adminDashboard.addedByAdmin') : t('adminDashboard.addedBySelf')}
                             </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -370,9 +370,9 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             {inGroup ? (
-                              <span className="text-success-600">In Group</span>
+                              <span className="text-success-600">{t('adminDashboard.statusInGroup')}</span>
                             ) : (
-                              <span className="text-gray-500">No Group</span>
+                              <span className="text-gray-500">{t('adminDashboard.statusNoGroup')}</span>
                             )}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -382,30 +382,30 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
                                   onClick={() => designateRepresentative(participant.email)}
                                   disabled={loading}
                                   className="text-purple-600 hover:text-purple-800"
-                                  title="Make Representative"
+                                  title={t('adminDashboard.makeRepresentative')}
                                 >
-                                  👑 Rep
+                                  👑 {t('adminDashboard.repRole')}
                                 </button>
                               ) : (
                                 <button
                                   onClick={() => removeRepresentativeRole(participant.email)}
                                   disabled={loading}
                                   className="text-gray-600 hover:text-gray-800"
-                                  title="Remove Representative Role"
+                                  title={t('adminDashboard.removeRepresentativeRole')}
                                 >
-                                  👤 User
+                                  👤 {t('adminDashboard.userRole')}
                                 </button>
                               )}
                               <button
                                 onClick={() => {
-                                  if (confirm(`Remove ${participant.email}?`)) {
+                                  if (confirm(t('adminDashboard.confirmRemoveParticipant', { email: participant.email }))) {
                                     removeParticipant(participant.email);
                                   }
                                 }}
                                 disabled={loading}
                                 className="text-error-600 hover:text-error-900"
                               >
-                                Remove
+                                {t('adminDashboard.remove')}
                               </button>
                             </div>
                           </td>
@@ -417,7 +417,7 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
 
                 {participants.length === 0 && (
                   <div className="text-center py-8 text-gray-500">
-                    No participants yet
+                    {t('adminDashboard.noParticipantsYet')}
                   </div>
                 )}
               </div>
@@ -426,7 +426,7 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
 
           {activeTab === 'groups' && (
             <div className="card">
-              <h3 className="text-lg font-semibold text-gray-900 mb-6">Groups ({groups.length})</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-6">{t('adminDashboard.groups')} ({groups.length || 0})</h3>
 
               <div className="space-y-4">
                 {groups.map((group) => (
@@ -435,7 +435,7 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
                       <div className="flex-1">
                         <div className="flex items-center space-x-3">
                           <h4 className="font-medium text-gray-900">
-                            Group ({group.members.length} members)
+                            {t('adminDashboard.groupMembers', { count: group.members.length })}
                           </h4>
                           <span className={`px-2 py-1 text-xs font-medium rounded-full ${
                             group.status === 'approved' 
@@ -444,19 +444,19 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
                               ? 'bg-blue-100 text-blue-700'
                               : 'bg-warning-100 text-warning-700'
                           }`}>
-                            {group.status}
+                            {t(`adminDashboard.${group.status}`)}
                           </span>
                         </div>
                         
                         <div className="mt-2 space-y-1">
                           <p className="text-sm text-gray-600">
-                            <strong>Representative:</strong> {group.representative}
+                            <strong>{t('adminDashboard.representative')}:</strong> {group.representative}
                           </p>
                           <p className="text-sm text-gray-600">
-                            <strong>Members:</strong> {group.members.join(', ')}
+                            <strong>{t('adminDashboard.members')}:</strong> {group.members.join(', ')}
                           </p>
                           <p className="text-sm text-gray-500">
-                            Created: {new Date(group.createdAt).toLocaleString()}
+                            {t('adminDashboard.createdAt')}: {new Date(group.createdAt).toLocaleString()}
                           </p>
                         </div>
                       </div>
@@ -469,7 +469,7 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
                               disabled={loading}
                               className="text-success-600 hover:text-success-800 text-sm font-medium"
                             >
-                              ✅ Approve
+                              ✅ {t('adminDashboard.approve')}
                             </button>
                             <button
                               onClick={() => {
@@ -480,25 +480,25 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
                               disabled={loading}
                               className="text-error-600 hover:text-error-800 text-sm font-medium"
                             >
-                              ❌ Remove
+                              ❌ {t('adminDashboard.remove')}
                             </button>
                           </>
                         )}
                         
                         {group.status === 'approved' && ballotStatus === 'not-started' && (
-                          <span className="text-success-600 text-sm">Ready for ballot</span>
+                          <span className="text-success-600 text-sm">{t('adminDashboard.readyForBallot')}</span>
                         )}
                         
                         {group.status === 'ballot-ready' && (
-                          <span className="text-warning-600 text-sm">Waiting for rep to draw</span>
+                          <span className="text-warning-600 text-sm">{t('adminDashboard.waitingForDraw')}</span>
                         )}
                         
                         {group.status === 'ballot-drawn' && (
-                          <span className="text-blue-600 text-sm">Position #{group.ballotPosition} drawn</span>
+                          <span className="text-blue-600 text-sm">{t('adminDashboard.positionDrawn', { position: group.ballotPosition || 0 })}</span>
                         )}
                         
                         {group.status === 'locked' && (
-                          <span className="text-blue-600 text-sm">Ballot completed</span>
+                          <span className="text-blue-600 text-sm">{t('adminDashboard.ballotCompletedStatus')}</span>
                         )}
                       </div>
                     </div>
@@ -507,7 +507,7 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
 
                 {groups.length === 0 && (
                   <div className="text-center py-8 text-gray-500">
-                    No groups created yet
+                    {t('adminDashboard.noGroupsYet')}
                   </div>
                 )}
               </div>
@@ -517,14 +517,14 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
           {activeTab === 'ballot' && (
             <div className="card">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-semibold text-gray-900">Ballot Management</h3>
+                <h3 className="text-lg font-semibold text-gray-900">{t('adminDashboard.ballotManagement')}</h3>
                 {ballotStatus === 'not-started' && approvedGroups.length > 0 && (
                   <button
                     onClick={handleStartBallot}
                     disabled={loading}
                     className="bg-primary-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-primary-700 disabled:opacity-50"
                   >
-                    🚀 Start Ballot Session
+                    🚀 {t('adminDashboard.startBallotSession')}
                   </button>
                 )}
               </div>
@@ -536,8 +536,8 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
                     <div className="flex items-center space-x-3">
                       <span className="text-gray-600 text-2xl">⏸️</span>
                       <div>
-                        <h4 className="font-semibold text-gray-800">Ballot Not Started</h4>
-                        <p className="text-gray-600 text-sm">Click "Start Ballot Session" to begin the drawing process.</p>
+                        <h4 className="font-semibold text-gray-800">{t('adminDashboard.ballotNotStarted')}</h4>
+                        <p className="text-gray-600 text-sm">{t('adminDashboard.ballotNotStartedDesc')}</p>
                       </div>
                     </div>
                   </div>
@@ -548,9 +548,12 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
                     <div className="flex items-center space-x-3">
                       <span className="text-warning-600 text-2xl">⏳</span>
                       <div>
-                        <h4 className="font-semibold text-warning-800">Ballot in Progress</h4>
+                        <h4 className="font-semibold text-warning-800">{t('adminDashboard.ballotInProgress')}</h4>
                         <p className="text-warning-700 text-sm">
-                          Representatives are drawing positions. {ballotDrawnGroups.length} of {ballotReadyGroups.length + ballotDrawnGroups.length} groups have completed their draws.
+                          {t('adminDashboard.ballotInProgressDesc', { 
+                            drawn: ballotDrawnGroups.length, 
+                            total: ballotReadyGroups.length + ballotDrawnGroups.length 
+                          })}
                         </p>
                       </div>
                     </div>
@@ -562,9 +565,9 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
                     <div className="flex items-center space-x-3">
                       <span className="text-success-600 text-2xl">✅</span>
                       <div>
-                        <h4 className="font-semibold text-success-800">Ballot Completed</h4>
+                        <h4 className="font-semibold text-success-800">{t('adminDashboard.ballotCompleted', { count: ballotResults?.totalGroups || 0 })}</h4>
                         <p className="text-success-700 text-sm">
-                          All groups have drawn their positions. Results are now available.
+                          {t('adminDashboard.ballotCompletedDesc')}
                         </p>
                       </div>
                     </div>
@@ -575,18 +578,18 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
               {ballotResults && ballotStatus === 'completed' ? (
                 <div className="space-y-4">
                   <div className="bg-success-50 border border-success-200 rounded-lg p-4">
-                    <h4 className="font-semibold text-success-800 mb-2">✅ Ballot Completed</h4>
+                    <h4 className="font-semibold text-success-800 mb-2">{t('adminDashboard.ballotCompleted', { count: ballotResults?.totalGroups || 0 })}</h4>
                     <div className="grid grid-cols-3 gap-4 text-sm">
                       <div>
-                        <span className="text-success-600">Drawn:</span>
+                        <span className="text-success-600">{t('status.drawnOn')}:</span>
                         <div className="font-medium">{new Date(ballotResults.drawnAt).toLocaleString()}</div>
                       </div>
                       <div>
-                        <span className="text-success-600">Groups:</span>
+                        <span className="text-success-600">{t('status.totalGroups')}:</span>
                         <div className="font-medium">{ballotResults.totalGroups}</div>
                       </div>
                       <div>
-                        <span className="text-success-600">Participants:</span>
+                        <span className="text-success-600">{t('status.totalParticipants')}:</span>
                         <div className="font-medium">{ballotResults.totalParticipants}</div>
                       </div>
                     </div>
@@ -594,7 +597,7 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
 
                   {/* Detailed Participant List Ordered by Position */}
                   <div className="bg-white border border-gray-200 rounded-lg p-4">
-                    <h4 className="font-semibold text-gray-800 mb-4">🎯 Final Allocation Order</h4>
+                    <h4 className="font-semibold text-gray-800 mb-4">🎯 {t('adminDashboard.finalAllocationOrder')}</h4>
                     <div className="space-y-4 max-h-96 overflow-y-auto">
                       {ballotResults.entries
                         .sort((a, b) => a.position - b.position)
@@ -610,10 +613,10 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
                                 </div>
                                 <div>
                                   <h5 className="font-medium text-gray-900">
-                                    {group.name || `Group ${String.fromCharCode(64 + entry.position)}`}
+                                    {group.name || t('adminDashboard.groupNameFallback', { letter: String.fromCharCode(64 + entry.position) })}
                                   </h5>
                                   <p className="text-xs text-gray-500">
-                                    {group.members.length + 1} participants
+                                    {group.members.length + 1} {t('adminDashboard.participants')}
                                   </p>
                                 </div>
                               </div>
@@ -621,7 +624,7 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
                               <div className="ml-11 space-y-1">
                                 {/* Representative first */}
                                 <div className="flex items-center text-sm">
-                                  <span className="inline-block w-16 text-xs text-purple-600 font-medium">Rep:</span>
+                                  <span className="inline-block w-16 text-xs text-purple-600 font-medium">{t('adminDashboard.representativeLabel')}</span>
                                   <span className="text-gray-900">{group.representative}</span>
                                 </div>
                                 
@@ -641,7 +644,7 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
 
                   <div className="flex gap-3">
                     <button onClick={() => onNavigate('results')} className="btn-primary">
-                      View Public Results
+                      {t('adminDashboard.viewPublicResults')}
                     </button>
                     <button
                       onClick={() => {
@@ -649,11 +652,11 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
                           .sort((a, b) => a.position - b.position)
                           .map(entry => {
                             const group = groups.find(g => g.id === entry.groupId);
-                            const groupName = group?.name || `Group ${String.fromCharCode(64 + entry.position)}`;
+                            const groupName = group?.name || t('adminDashboard.groupNameFallback', { letter: String.fromCharCode(64 + entry.position) });
                             return `${entry.position},"${groupName}","${group?.representative}","${group?.members.join('; ')}",${(group?.members.length || 0) + 1}`;
                           }).join('\n');
                         
-                        const blob = new Blob([`Position,Group Name,Representative,Members,Total Size\n${csvContent}`], { type: 'text/csv' });
+                        const blob = new Blob([`${t('adminDashboard.csvHeaders')}\n${csvContent}`], { type: 'text/csv' });
                         const url = window.URL.createObjectURL(blob);
                         const a = document.createElement('a');
                         a.href = url;
@@ -663,7 +666,7 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
                       }}
                       className="btn-secondary"
                     >
-                      📥 Export Detailed Results
+                      📥 {t('adminDashboard.exportDetailedResults')}
                     </button>
                   </div>
                 </div>
@@ -672,24 +675,24 @@ export function AdminDashboard({ onNavigate }: AdminDashboardProps) {
                   {approvedGroups.length === 0 ? (
                     <div>
                       <div className="text-4xl mb-4">⏳</div>
-                      <h4 className="text-lg font-medium text-gray-900 mb-2">No Approved Groups</h4>
+                      <h4 className="text-lg font-medium text-gray-900 mb-2">{t('adminDashboard.noApprovedGroups')}</h4>
                       <p className="text-gray-600">
-                        You need approved groups before running the ballot.
+                        {t('adminDashboard.noApprovedGroupsDesc')}
                       </p>
                     </div>
                   ) : (
                     <div>
                       <div className="text-4xl mb-4">🎲</div>
-                      <h4 className="text-lg font-medium text-gray-900 mb-2">Ready to Draw</h4>
+                      <h4 className="text-lg font-medium text-gray-900 mb-2">{t('adminDashboard.readyToDraw')}</h4>
                       <p className="text-gray-600 mb-4">
-                        {approvedGroups.length} approved groups ready for ballot draw.
+                        {t('adminDashboard.readyToDrawDesc', { count: approvedGroups.length })}
                       </p>
                       <button
                         onClick={handleStartBallot}
                         disabled={loading}
                         className="bg-primary-600 text-white px-8 py-3 rounded-lg font-medium hover:bg-primary-700 disabled:opacity-50"
                       >
-                        🚀 Start Ballot Session
+                        🚀 {t('adminDashboard.startBallotSession')}
                       </button>
                     </div>
                   )}

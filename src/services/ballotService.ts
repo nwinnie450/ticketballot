@@ -217,7 +217,7 @@ class BallotService {
     // Total group size = representative + members (members can be 0 for 1-person groups)
     const totalGroupSize = members.length + 1;
     if (totalGroupSize < 1 || totalGroupSize > 3) {
-      throw new Error(`Groups must have 1-3 total members. You have ${totalGroupSize} (1 rep + ${members.length} members)`);
+      throw new Error(`Groups must have 1-3 total members including representative. You have ${totalGroupSize} total members`);
     }
 
     const currentSessionId = this.data.currentSessionId || this.createDefaultSession();
