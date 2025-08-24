@@ -43,27 +43,27 @@ export function Header({ onNavigate, currentPage }: HeaderProps) {
     }
   };
 
+  // Main navigation items
   const navItems = [
     { id: 'landing', label: t('header.home'), roles: ['guest', 'user', 'representative', 'admin'] },
-    // Only show Register for guests (not logged in users)
-    { id: 'registration', label: t('header.register'), roles: ['guest'] },
     { id: 'group-formation', label: t('header.createGroup'), roles: ['user', 'representative'] },
     { id: 'status', label: t('header.myStatus'), roles: ['user', 'representative'] },
     { id: 'results', label: t('header.results'), roles: ['guest', 'user', 'representative', 'admin'] },
   ];
 
-  // Add login option for guests
-  const loginItems = !currentUser && !isAdminAuthenticated ? [
+  // Auth items for guests (not logged in)
+  const authItems = !currentUser && !isAdminAuthenticated ? [
     { id: 'user-auth', label: t('header.register'), roles: ['guest'] },
+    { id: 'admin-login', label: t('header.adminLogin'), roles: ['guest'] },
   ] : [];
 
-  // Add admin navigation items if authenticated
+  // Admin navigation items if authenticated
   const adminNavItems = isAdminAuthenticated ? [
     { id: 'admin-dashboard', label: t('admin.dashboard'), roles: ['admin'] },
     { id: 'admin-settings', label: t('admin.settings'), roles: ['admin'] },
   ] : [];
 
-  const allNavItems = [...navItems, ...loginItems, ...adminNavItems];
+  const allNavItems = [...navItems, ...authItems, ...adminNavItems];
   const visibleItems = allNavItems.filter(item => 
     item.roles.includes(userRole) || (isAdminAuthenticated && item.roles.includes('admin'))
   );
