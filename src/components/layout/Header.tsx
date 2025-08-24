@@ -152,6 +152,28 @@ export function Header({ onNavigate, currentPage }: HeaderProps) {
               </div>
             )}
 
+            {/* Mobile Logout Button - Always visible when logged in */}
+            {(currentUser || isAdminAuthenticated) && (
+              <button
+                onClick={() => {
+                  if (isAdminAuthenticated) {
+                    authService.logout();
+                    onNavigate('landing');
+                  } else {
+                    setCurrentUser(null);
+                    onNavigate('landing');
+                  }
+                }}
+                className="md:hidden p-2 rounded-md text-red-600 hover:text-red-700 hover:bg-red-50 transition-colors"
+                title={t('header.logout')}
+              >
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+              </button>
+            )}
+
             {/* Mobile menu button */}
             <button
               onClick={() => setShowMobileMenu(!showMobileMenu)}
